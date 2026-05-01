@@ -1,6 +1,6 @@
-# McMaster LabPartner Platform
+# LabPartner Platform
 
-A web app scaffold for matching McMaster students for labs and tutorials.
+A web app for matching students for labs and tutorials.
 
 ## Tech
 
