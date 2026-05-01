@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../apps/web/src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SectionKind {
+  LAB
+  TUTORIAL
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum MatchStatus {
+  SUGGESTED
+  ACCEPTED
+  DECLINED
+  ARCHIVED
+}
+
+model Course {
+  id        String          @id @default(cuid())
+  code      String
+  title     String
+  term      String
+  sections  CourseSection[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([code, term])
+  @@index([term])
+}
+
+model CourseSection {
+  id             String              @id @default(cuid())
+  courseId       String
+  kind           SectionKind
+  sectionCode    String
+  capacity       Int?
+  mosaicImportId String?
+  course         Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  meetings       SectionMeeting[]
+  enrollments    StudentEnrollment[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([courseId, kind, sectionCode])
+  @@index([kind])
+}
+
+model SectionMeeting {
+  id               String        @id @default(cuid())
+  courseSectionId  String
+  dayOfWeek        Weekday
+  startTimeMinutes Int
+  endTimeMinutes   Int
+  location         String?
+  courseSection    CourseSection @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([dayOfWeek, startTimeMinutes])
+}
+
+model StudentProfile {
+  id              String              @id @default(cuid())
+  displayName     String
+  email           String              @unique
+  program         String?
+  yearOfStudy     Int?
+  studyStyle      String?
+  enrollments     StudentEnrollment[]
+  preferences     MatchPreference?
+  requestedMatches LabPartnerMatch[]  @relation("MatchRequester")
+  candidateMatches LabPartnerMatch[]  @relation("MatchCandidate")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model StudentEnrollment {
+  id              String        @id @default(cuid())
+  studentProfileId String
+  courseSectionId String
+  studentProfile  StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  courseSection   CourseSection  @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+
+  @@unique([studentProfileId, courseSectionId])
+  @@index([courseSectionId])
+}
+
+model MatchPreference {
+  id               String         @id @default(cuid())
+  studentProfileId String         @unique
+  prefersSameLab   Boolean        @default(true)
+  prefersSameTutorial Boolean     @default(false)
+  availabilityNote String?
+  collaborationNote String?
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model LabPartnerMatch {
+  id          String         @id @default(cuid())
+  requesterId String
+  candidateId String
+  status      MatchStatus    @default(SUGGESTED)
+  score       Int
+  notes       String?
+  requester   StudentProfile @relation("MatchRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  candidate   StudentProfile @relation("MatchCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([requesterId, candidateId])
+  @@index([status])
+}
