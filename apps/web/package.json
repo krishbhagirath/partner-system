@@ -10,10 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "latest",
-    "@prisma/client": "latest",
+    "@prisma/adapter-pg": "^6.19.3",
+    "@prisma/client": "^6.19.3",
+    "next": "^16.2.6",
     "pg": "latest",
-    "next": "latest",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"
@@ -24,7 +24,7 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "eslint": "latest",
-    "eslint-config-next": "latest",
+    "eslint-config-next": "^16.2.6",
     "tailwindcss": "latest",
     "typescript": "latest"
   }

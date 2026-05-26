@@ -11,7 +11,8 @@ build
 
 # env
 .env
-.env*.local
+.env.*
+!.env.example
 
 # logs
 npm-debug.log*
@@ -29,5 +30,9 @@ Thumbs.db
 
 # tooling
 .turbo
+.vercel
 coverage
 *.tsbuildinfo
+
+# local notes
+LOCAL_NOTES.md

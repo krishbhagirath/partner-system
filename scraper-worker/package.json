@@ -1,0 +1,32 @@
+{
+  "name": "scraper-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "db:generate": "prisma generate",
+    "playwright:install": "playwright install --with-deps chromium"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^6.19.3",
+    "@prisma/client": "^6.19.3",
+    "cheerio": "^1.1.2",
+    "dotenv": "latest",
+    "express": "^4.21.2",
+    "pg": "latest",
+    "playwright": "^1.51.1",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.10",
+    "@types/pg": "latest",
+    "prisma": "^6.19.3",
+    "tsx": "latest",
+    "typescript": "^5.8.3"
+  }
+}

@@ -3,13 +3,17 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().url().optional(),
+  DIRECT_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  SCRAPER_URL: z.string().url(),
 });
 
 const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
+  DIRECT_URL: process.env.DIRECT_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  SCRAPER_URL: process.env.SCRAPER_URL,
 });
 
 if (!parsedEnv.success) {

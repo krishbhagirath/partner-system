@@ -1,68 +1,39 @@
 # LabPartner Platform
 
-A web app for matching students for labs and tutorials.
+A monorepo-style web app for matching McMaster students with lab and tutorial partners.
 
 ## Tech
 
-- Next.js
+- Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Prisma
-- PostgreSQL
+- Prisma with Supabase hosted PostgreSQL
+- Zod
+- ESLint
+- Prettier
 
 ## Getting Started
 
 ```bash
-cp .env.example .env
 npm install
+cp .env.example .env.local
 npm run db:generate
 npm run db:migrate -- --name init
 npm run dev
 ```
 
-App:
-
-```text
-http://localhost:3000
-```
-
-Health check:
-
-```text
-http://localhost:3000/api/health
-```
-
-## Environment Variables
-
-```env
-DATABASE_URL=
-NEXT_PUBLIC_APP_URL=
-```
+Copy `.env.example` to `.env.local` and fill in the required local values before running
+database commands.
 
 ## Database Migrations
 
-The Prisma schema lives in `prisma/schema.prisma`. The generated Prisma client is written to
-`apps/web/src/generated/prisma` and is ignored by Git.
-
-Create a migration after changing the schema:
+The Prisma schema lives in `prisma/schema.prisma`.
 
 ```bash
 npm run db:migrate -- --name init_lab_partner_schema
-```
-
-Regenerate the Prisma client without creating a migration:
-
-```bash
 npm run db:generate
-```
-
-Validate the schema:
-
-```bash
 npx prisma validate
 ```
-
-The shared Prisma client helper is in `apps/web/src/server/db.ts`.
 
 ## Status
 
