@@ -4,8 +4,6 @@ import { fileURLToPath } from "node:url";
 import { parse } from "dotenv";
 
 const envFileUrls = [
-  new URL("../../.env", import.meta.url),
-  new URL("../../.env.local", import.meta.url),
   new URL("../.env", import.meta.url),
   new URL("../.env.local", import.meta.url),
 ];

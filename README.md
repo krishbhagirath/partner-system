@@ -16,13 +16,13 @@ A monorepo-style web app for matching McMaster students with lab and tutorial pa
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example apps/web/.env.local
 npm run db:generate
 npm run db:migrate -- --name init
 npm run dev
 ```
 
-Copy `.env.example` to `.env.local` and fill in the required local values before running
+Copy `.env.example` to `apps/web/.env.local` and fill in the required local values before running
 database commands.
 
 ## Database Migrations

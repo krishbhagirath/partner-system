@@ -68,11 +68,7 @@ const importJobStatusByStage: Record<WorkerJobStage, ImportJobStatus> = {
 
 const terminalStages = new Set<WorkerJobStage>(["COMPLETED", "FAILED"]);
 
-export async function updateJobStatus(
-  jobId: string,
-  stage: WorkerJobStage,
-  errorMessage?: string,
-) {
+export async function updateJobStatus(jobId: string, stage: WorkerJobStage, errorMessage?: string) {
   const now = new Date();
   const status = importJobStatusByStage[stage];
 

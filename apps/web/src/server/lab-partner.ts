@@ -26,6 +26,22 @@ export function createImportJob(userId: string) {
   });
 }
 
+export function getImportJobForUser(userId: string, jobId: string) {
+  return db.importJob.findFirst({
+    include: {
+      _count: {
+        select: {
+          sections: true,
+        },
+      },
+    },
+    where: {
+      id: jobId,
+      userId,
+    },
+  });
+}
+
 export function updateImportJobStatus(
   jobId: string,
   status: ImportJobStatus,

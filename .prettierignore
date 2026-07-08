@@ -5,3 +5,4 @@ dist
 build
 package-lock.json
 apps/web/src/generated/prisma
+scraper-worker/src/generated/prisma

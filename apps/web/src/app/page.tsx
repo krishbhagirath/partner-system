@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { auth } from "@/auth";
+import { SignOutButton } from "@/components/sign-out-button";
+
 const matchingSignals = ["Course sections", "Availability", "Study goals", "Work style"] as const;
 
 const upcomingSections = [
@@ -23,11 +26,13 @@ const upcomingSections = [
   },
 ] as const;
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   return (
     <main className="min-h-screen bg-stone-50 text-zinc-950">
       <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between border-b border-zinc-200 pb-5">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
           <Link className="flex items-center gap-3" href="/">
             <span className="grid size-10 place-items-center rounded bg-[#7A003C] text-sm font-bold text-white">
               LP
@@ -39,12 +44,38 @@ export default function Home() {
               <span className="block text-lg font-bold leading-none">LabPartner</span>
             </span>
           </Link>
-          <a
-            className="rounded border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
-            href="/api/health"
-          >
-            API health
-          </a>
+          <nav className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+            {session?.user ? (
+              <>
+                <Link
+                  className="rounded bg-[#7A003C] px-4 py-2 text-white transition hover:bg-[#5f0030]"
+                  href="/import"
+                >
+                  Import from Mosaic
+                </Link>
+                <Link
+                  className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
+                  href="/profile"
+                >
+                  Profile
+                </Link>
+                <SignOutButton className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]" />
+              </>
+            ) : (
+              <Link
+                className="rounded bg-[#7A003C] px-4 py-2 text-white transition hover:bg-[#5f0030]"
+                href="/auth/signin"
+              >
+                Sign in
+              </Link>
+            )}
+            <a
+              className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
+              href="/api/health"
+            >
+              API health
+            </a>
+          </nav>
         </header>
 
         <div className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[1fr_0.9fr] lg:py-16">
@@ -61,6 +92,12 @@ export default function Home() {
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
+              <Link
+                className="rounded bg-[#7A003C] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5f0030]"
+                href={session?.user ? "/import" : "/auth/signin"}
+              >
+                {session?.user ? "Start Mosaic import" : "Sign in to start"}
+              </Link>
               {matchingSignals.map((signal) => (
                 <span
                   className="rounded border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800"

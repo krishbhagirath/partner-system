@@ -31,8 +31,25 @@ Thumbs.db
 # tooling
 .turbo
 .vercel
+.cache
 coverage
+playwright-report
+test-results
 *.tsbuildinfo
+
+# editor
+.vscode
+.idea
+
+# python
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
 
 # local notes
 LOCAL_NOTES.md
+handoff.md
+temp.py
+schedule.json
