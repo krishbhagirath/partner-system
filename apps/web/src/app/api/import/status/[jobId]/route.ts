@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { AuthenticationError, requireUser } from "@/server/auth";
 import { getImportJobForUser } from "@/server/lab-partner";
 
@@ -35,7 +36,15 @@ export async function GET(_request: Request, context: ImportStatusRouteContext) 
     return NextResponse.json({ error: "jobId is required." }, { status: 400 });
   }
 
-  const job = await getImportJobForUser(user.id, jobId);
+  let job: Awaited<ReturnType<typeof getImportJobForUser>>;
+
+  try {
+    job = await getImportJobForUser(user.id, jobId);
+  } catch (error) {
+    logServerError("GET /api/import/status/[jobId]", error, { jobId, userId: user.id });
+
+    return internalErrorResponse();
+  }
 
   if (!job) {
     return NextResponse.json({ error: "Import job not found." }, { status: 404 });
@@ -47,6 +56,9 @@ export async function GET(_request: Request, context: ImportStatusRouteContext) 
       errorMessage: job.errorMessage,
       finishedAt: job.finishedAt?.toISOString() ?? null,
       id: job.id,
+      progressCurrent: job.progressCurrent,
+      progressStage: job.progressStage,
+      progressTotal: job.progressTotal,
       sectionsCount: job._count.sections,
       startedAt: job.startedAt?.toISOString() ?? null,
       status: job.status,

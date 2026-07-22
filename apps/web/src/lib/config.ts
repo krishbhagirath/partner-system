@@ -12,3 +12,14 @@ export function requireScraperConfig() {
     workerSecret: env.WORKER_SECRET,
   };
 }
+
+export function requireEmailConfig() {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
+    throw new Error("RESEND_API_KEY and EMAIL_FROM are required to send email.");
+  }
+
+  return {
+    emailFrom: env.EMAIL_FROM,
+    resendApiKey: env.RESEND_API_KEY,
+  };
+}

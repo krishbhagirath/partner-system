@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireScraperConfig } from "@/lib/config";
+import { checkRateLimit, rateLimitExceededResponse, rateLimitRules } from "@/lib/rate-limit";
+import { logServerError } from "@/server/api-error";
 import { AuthenticationError, requireUser } from "@/server/auth";
 import { createImportJob, updateImportJobStatus } from "@/server/lab-partner";
 
@@ -28,6 +30,15 @@ export async function POST(request: Request) {
     }
 
     throw error;
+  }
+
+  const rateLimit = checkRateLimit(
+    `import-start:${authenticatedUser.id}`,
+    rateLimitRules.importStart,
+  );
+
+  if (!rateLimit.ok) {
+    return rateLimitExceededResponse(rateLimit.retryAfterSeconds);
   }
 
   let body: unknown;
@@ -75,7 +86,9 @@ export async function POST(request: Request) {
     const job = await createImportJob(authenticatedUser.id);
 
     jobId = job.id;
-  } catch {
+  } catch (error) {
+    logServerError("POST /api/import/start", error, { userId: authenticatedUser.id });
+
     return NextResponse.json(
       {
         error: "Unable to create import job.",
@@ -118,7 +131,8 @@ function dispatchScraperWorker(
         await markDispatchFailed(input.jobId, await getWorkerFailureMessage(response));
       }
     })
-    .catch(async () => {
+    .catch(async (error: unknown) => {
+      logServerError("scraper dispatch", error, { jobId: input.jobId });
       await markDispatchFailed(input.jobId);
     });
 }

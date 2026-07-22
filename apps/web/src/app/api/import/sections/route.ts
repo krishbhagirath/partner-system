@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { AuthenticationError, requireUser } from "@/server/auth";
-import { listSectionsForUser } from "@/server/lab-partner";
+import {
+  buildCourseComponentKey,
+  getPartnerNeedStatsForPairs,
+  getPartnerNeedVotesForUser,
+  listSectionsForUser,
+} from "@/server/lab-partner";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,24 +25,51 @@ export async function GET() {
     throw error;
   }
 
-  const sections = await listSectionsForUser(user.id);
+  let sections: Awaited<ReturnType<typeof listSectionsForUser>>;
+  let partnerNeedStats: Awaited<ReturnType<typeof getPartnerNeedStatsForPairs>>;
+  let viewerVotes: Awaited<ReturnType<typeof getPartnerNeedVotesForUser>>;
+
+  try {
+    sections = await listSectionsForUser(user.id);
+    [partnerNeedStats, viewerVotes] = await Promise.all([
+      getPartnerNeedStatsForPairs(
+        sections.map((section) => ({
+          componentType: section.componentType,
+          courseCode: section.courseCode,
+        })),
+      ),
+      getPartnerNeedVotesForUser(user.id),
+    ]);
+  } catch (error) {
+    logServerError("GET /api/import/sections", error, { userId: user.id });
+
+    return internalErrorResponse();
+  }
 
   return NextResponse.json({
-    sections: sections.map((section) => ({
-      componentType: section.componentType,
-      courseCode: section.courseCode,
-      createdAt: section.createdAt.toISOString(),
-      dayOfWeek: section.dayOfWeek,
-      endTime: toClockTime(section.endTime),
-      id: section.id,
-      importJobId: section.importJobId,
-      location: section.location,
-      rawTitle: section.rawTitle,
-      sectionCode: section.sectionCode,
-      startTime: toClockTime(section.startTime),
-      term: section.term,
-      updatedAt: section.updatedAt.toISOString(),
-    })),
+    sections: sections.map((section) => {
+      const key = buildCourseComponentKey(section.courseCode, section.componentType);
+      const stats = partnerNeedStats.get(key);
+
+      return {
+        componentType: section.componentType,
+        courseCode: section.courseCode,
+        createdAt: section.createdAt.toISOString(),
+        dayOfWeek: section.dayOfWeek,
+        endTime: toClockTime(section.endTime),
+        id: section.id,
+        importJobId: section.importJobId,
+        location: section.location,
+        partnerNeedNoCount: stats?.noCount ?? null,
+        partnerNeedYesCount: stats?.yesCount ?? null,
+        rawTitle: section.rawTitle,
+        sectionCode: section.sectionCode,
+        startTime: toClockTime(section.startTime),
+        term: section.term,
+        updatedAt: section.updatedAt.toISOString(),
+        viewerPartnerNeedResponse: viewerVotes.get(key) ?? null,
+      };
+    }),
   });
 }
 

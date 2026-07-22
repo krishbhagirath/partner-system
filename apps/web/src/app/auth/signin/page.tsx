@@ -2,16 +2,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { BrandMark } from "@/components/site-header";
 import { SignInForm } from "./sign-in-form";
 
 type SignInPageProps = {
   searchParams?: Promise<{
     callbackUrl?: string;
+    error?: string;
+    verified?: string;
   }>;
 };
 
 export const metadata = {
-  title: "Sign in | LabPartner",
+  title: "Sign in | PartnerUp",
 };
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
@@ -26,25 +29,32 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <main className="min-h-screen bg-stone-50 text-zinc-950">
       <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
-        <Link className="mb-8 flex items-center gap-3" href="/">
-          <span className="grid size-10 place-items-center rounded bg-[#7A003C] text-sm font-bold text-white">
-            LP
-          </span>
-          <span>
-            <span className="block text-sm font-semibold uppercase text-[#7A003C]">McMaster</span>
-            <span className="block text-lg font-bold leading-none">LabPartner</span>
-          </span>
-        </Link>
+        <div className="mb-8">
+          <BrandMark withTagline />
+        </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-950/5 sm:p-8">
           <div>
-            <h1 className="text-2xl font-black text-zinc-950">Sign in</h1>
+            <h1 className="font-display text-2xl font-bold text-zinc-950">Welcome back</h1>
             <p className="mt-2 text-sm leading-6 text-zinc-600">
-              Use the local test account created by `npm run seed`.
+              Log in with your McMaster email.
             </p>
           </div>
 
-          <SignInForm callbackUrl={callbackUrl} />
+          {resolvedSearchParams?.verified ? (
+            <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+              Email verified — you can now sign in.
+            </p>
+          ) : null}
+
+          <SignInForm callbackUrl={callbackUrl} oauthError={resolvedSearchParams?.error} />
+
+          <p className="mt-6 border-t border-zinc-200 pt-4 text-sm leading-6 text-zinc-600">
+            New here?{" "}
+            <Link className="font-bold text-brand hover:underline" href="/auth/signup">
+              Create an account
+            </Link>
+          </p>
         </div>
       </section>
     </main>
@@ -53,7 +63,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
 function safeCallbackUrl(callbackUrl: string | undefined) {
   if (!callbackUrl?.startsWith("/") || callbackUrl.startsWith("//")) {
-    return "/import";
+    return "/dashboard";
   }
 
   return callbackUrl;

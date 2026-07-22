@@ -19,15 +19,37 @@ const scrapeRequestSchema = z
   .strict();
 
 const workerSecret = requireEnv("WORKER_SECRET");
-const port = Number.parseInt(process.env.PORT ?? "8080", 10);
+const port = parsePort(process.env.PORT);
 const app = express();
+
+// Basic global fixed-window rate limit. Only the web app calls this service,
+// so a single shared window is enough to stop runaway or abusive callers.
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_WINDOW_MS = 10 * 60_000;
+let rateLimitWindowStart = 0;
+let rateLimitCount = 0;
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "16kb" }));
 
+app.get("/health", (_request, response) => {
+  response.status(200).json({ ok: true });
+});
+
 app.post("/scrape", async (request, response) => {
   if (!isAuthorized(request.get("WORKER_SECRET") ?? request.get("x-worker-secret") ?? "")) {
     response.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const retryAfterSeconds = takeRateLimitSlot();
+
+  if (retryAfterSeconds > 0) {
+    logLine("warn", "scrape:rate_limited", { retryAfterSeconds });
+    response
+      .status(429)
+      .set("Retry-After", String(retryAfterSeconds))
+      .json({ error: "Too many scrape requests. Please try again later." });
     return;
   }
 
@@ -46,6 +68,7 @@ app.post("/scrape", async (request, response) => {
       result,
     });
   } catch (error) {
+    // runScrapeJob already redacts credentials from the error message.
     response.status(500).json({
       error: error instanceof Error ? error.message : "Scrape failed.",
       ok: false,
@@ -56,7 +79,7 @@ app.post("/scrape", async (request, response) => {
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  console.log(`scraper-worker listening on port ${port}`);
+  logLine("info", "server:listening", { port });
 });
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -79,8 +102,59 @@ function isAuthorized(providedSecret: string) {
   return timingSafeEqual(expected, provided);
 }
 
+function parsePort(rawPort: string | undefined) {
+  if (!rawPort) {
+    return 8080;
+  }
+
+  const parsedPort = Number.parseInt(rawPort, 10);
+
+  if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65_535) {
+    throw new Error(`PORT must be an integer between 1 and 65535, got "${rawPort}".`);
+  }
+
+  return parsedPort;
+}
+
+function takeRateLimitSlot() {
+  const now = Date.now();
+
+  if (now - rateLimitWindowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitWindowStart = now;
+    rateLimitCount = 0;
+  }
+
+  if (rateLimitCount >= RATE_LIMIT_MAX_REQUESTS) {
+    return Math.max(1, Math.ceil((rateLimitWindowStart + RATE_LIMIT_WINDOW_MS - now) / 1000));
+  }
+
+  rateLimitCount += 1;
+
+  return 0;
+}
+
+function logLine(
+  level: "error" | "info" | "warn",
+  step: string,
+  details: Record<string, number | string> = {},
+) {
+  const line = JSON.stringify({
+    ...details,
+    level,
+    step,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (level === "error") {
+    console.error(line);
+    return;
+  }
+
+  console.log(line);
+}
+
 async function shutdown(signal: "SIGINT" | "SIGTERM") {
-  console.log(`received ${signal}, shutting down`);
+  logLine("info", "server:shutdown", { signal });
 
   await new Promise<void>((resolve, reject) => {
     server.close((error) => {

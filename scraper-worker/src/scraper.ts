@@ -5,6 +5,7 @@ import { chromium, type Frame, type Locator, type Page } from "playwright";
 
 import {
   saveSectionsForUser,
+  updateJobProgress,
   updateJobStatus,
   type SaveSectionsResult,
   type SectionCreateInput,
@@ -42,6 +43,12 @@ const PER_SELECTOR_TIMEOUT_MS = 5_000;
 const SCHEDULE_REFRESH_TIMEOUT_MS = 20_000;
 const SELECTOR_TIMEOUT_MS = 30_000;
 const SHORT_SELECTOR_TIMEOUT_MS = 5_000;
+// Stop scanning once this many consecutive weeks add no new sections (labs and
+// tutorials repeat weekly or biweekly, so a 4-week silence means the schedule
+// is fully captured), but never before scanning EARLY_EXIT_MIN_WEEKS.
+const EARLY_EXIT_IDLE_WEEKS = 4;
+const EARLY_EXIT_MIN_WEEKS = 6;
+const scanFullTerm = process.env.SCRAPER_FULL_TERM?.trim().toLowerCase() === "true";
 const headless = shouldRunHeadless();
 
 const selectors = {
@@ -120,9 +127,9 @@ export async function runScrapeJob(input: ScrapeJobInput): Promise<ScrapeJobResu
     await login(page, input.macId, input.password, input.jobId);
 
     await updateJobStatus(input.jobId, "NAVIGATING");
-    const frame = await navigateToWeeklySchedule(page, input.jobId);
+    const schedule = await navigateToWeeklySchedule(page, input.jobId);
 
-    if (!frame) {
+    if (!schedule) {
       await updateJobStatus(input.jobId, "COMPLETED");
       logProgress(input.jobId, "scrape:completed", {
         reason: "not_enrolled",
@@ -138,25 +145,64 @@ export async function runScrapeJob(input: ScrapeJobInput): Promise<ScrapeJobResu
       };
     }
 
-    const termWindow = await getTermWindowFromSchedule(frame, input.jobId);
+    const { frame } = schedule;
+    const termWindow = schedule.termWindow ?? (await getTermWindowFromSchedule(frame, input.jobId));
 
     await updateJobStatus(input.jobId, "SCRAPING");
-    const weeklyHtml = [];
+    const totalWeeks = termWindow.mondays.length;
     logProgress(input.jobId, "weeks:scrape_start", {
       term: termWindow.term,
-      weeksToScrape: termWindow.mondays.length,
+      weeksToScrape: totalWeeks,
     });
 
+    const sections: SectionCreateInput[] = [];
+    const seenSectionKeys = new Set<string>();
+    let weeksScraped = 0;
+    let idleWeeks = 0;
+
     for (const monday of termWindow.mondays) {
-      weeklyHtml.push(await scrapeWeek(frame, monday, input.jobId));
+      const weekHtml = await scrapeWeek(frame, monday, input.jobId);
+      weeksScraped += 1;
+
+      const weekSections = parseWeeklyScheduleHtml(weekHtml, {
+        term: termWindow.term,
+      }) as SectionCreateInput[];
+      let newSectionsThisWeek = 0;
+
+      for (const section of weekSections) {
+        const key = buildSectionIdentityKey(section);
+
+        if (!seenSectionKeys.has(key)) {
+          seenSectionKeys.add(key);
+          sections.push(section);
+          newSectionsThisWeek += 1;
+        }
+      }
+
+      idleWeeks = newSectionsThisWeek > 0 ? 0 : idleWeeks + 1;
+      await updateJobProgress(input.jobId, weeksScraped, totalWeeks).catch(() => undefined);
+
+      if (
+        !scanFullTerm &&
+        weeksScraped >= EARLY_EXIT_MIN_WEEKS &&
+        idleWeeks >= EARLY_EXIT_IDLE_WEEKS &&
+        weeksScraped < totalWeeks
+      ) {
+        logProgress(input.jobId, "weeks:early_exit", {
+          idleWeeks,
+          sectionsParsed: sections.length,
+          weeksScraped,
+          weeksSkipped: totalWeeks - weeksScraped,
+        });
+        break;
+      }
     }
 
     await updateJobStatus(input.jobId, "PARSING");
-    logProgress(input.jobId, "parse:start", { weeksScraped: weeklyHtml.length });
-    const sections = weeklyHtml.flatMap(
-      (html) => parseWeeklyScheduleHtml(html, { term: termWindow.term }) as SectionCreateInput[],
-    );
-    logProgress(input.jobId, "parse:complete", { sectionsParsed: sections.length });
+    logProgress(input.jobId, "parse:complete", {
+      sectionsParsed: sections.length,
+      weeksScraped,
+    });
 
     await updateJobStatus(input.jobId, "SAVING");
     const saveResult = await saveSectionsForUser(input.userId, input.jobId, sections);
@@ -164,14 +210,14 @@ export async function runScrapeJob(input: ScrapeJobInput): Promise<ScrapeJobResu
     await updateJobStatus(input.jobId, "COMPLETED");
     logProgress(input.jobId, "scrape:completed", {
       sectionsParsed: sections.length,
-      weeksScraped: weeklyHtml.length,
+      weeksScraped,
     });
 
     return {
       saveResult,
       sectionsParsed: sections.length,
       term: termWindow.term,
-      weeksScraped: weeklyHtml.length,
+      weeksScraped,
     };
   } catch (error) {
     const safeMessage = redactSecrets(errorToMessage(error), [input.macId, input.password]);
@@ -315,7 +361,10 @@ async function hasVisibleLoginRejection(page: Page, jobId: string) {
   );
 }
 
-async function navigateToWeeklySchedule(page: Page, jobId: string): Promise<Frame | null> {
+async function navigateToWeeklySchedule(
+  page: Page,
+  jobId: string,
+): Promise<WeeklyScheduleNavigationResult | null> {
   logProgress(jobId, "weekly_schedule:locate");
   await waitForLoadStateWithMessage(
     page,
@@ -325,25 +374,35 @@ async function navigateToWeeklySchedule(page: Page, jobId: string): Promise<Fram
   );
 
   let frame = await switchToMosaicFrame(page, jobId, SHORT_SELECTOR_TIMEOUT_MS).catch(() => null);
-  let openResult = frame ? await openWeeklyScheduleFromFrame(frame, jobId, true) : "missing";
+  let openResult = frame
+    ? await openWeeklyScheduleFromFrame(frame, jobId, true)
+    : missingWeeklyScheduleResult();
 
-  if (openResult === "opened") {
-    return frame;
+  if (frame && openResult.status === "opened") {
+    return {
+      frame,
+      termWindow: openResult.termWindow,
+    };
   }
 
-  if (openResult === "not_enrolled") {
+  if (openResult.status === "not_enrolled") {
     return null;
   }
 
   if (await clickStudentCenterIfPresent(page, jobId)) {
     frame = await switchToMosaicFrame(page, jobId, FRAME_TIMEOUT_MS).catch(() => null);
-    openResult = frame ? await openWeeklyScheduleFromFrame(frame, jobId, true) : "missing";
+    openResult = frame
+      ? await openWeeklyScheduleFromFrame(frame, jobId, true)
+      : missingWeeklyScheduleResult();
 
-    if (openResult === "opened") {
-      return frame;
+    if (frame && openResult.status === "opened") {
+      return {
+        frame,
+        termWindow: openResult.termWindow,
+      };
     }
 
-    if (openResult === "not_enrolled") {
+    if (openResult.status === "not_enrolled") {
       return null;
     }
   }
@@ -363,15 +422,18 @@ async function navigateToWeeklySchedule(page: Page, jobId: string): Promise<Fram
   frame = await switchToMosaicFrame(page, jobId, FRAME_TIMEOUT_MS);
   openResult = await openWeeklyScheduleFromFrame(frame, jobId, false);
 
-  if (openResult === "not_enrolled") {
+  if (openResult.status === "not_enrolled") {
     return null;
   }
 
-  if (openResult !== "opened") {
+  if (openResult.status !== "opened") {
     throw new Error("Unable to open Mosaic weekly schedule from the Student Center.");
   }
 
-  return frame;
+  return {
+    frame,
+    termWindow: openResult.termWindow,
+  };
 }
 
 async function clickStudentCenterIfPresent(page: Page, jobId: string) {
@@ -398,7 +460,19 @@ async function clickStudentCenterIfPresent(page: Page, jobId: string) {
   return true;
 }
 
-type WeeklyScheduleOpenResult = "missing" | "not_enrolled" | "opened";
+type WeeklyScheduleNavigationResult = {
+  frame: Frame;
+  termWindow: TermWindow | null;
+};
+
+type WeeklyScheduleOpenResult =
+  | {
+      status: "missing" | "not_enrolled";
+    }
+  | {
+      status: "opened";
+      termWindow: TermWindow | null;
+    };
 
 async function openWeeklyScheduleFromFrame(
   frame: Frame,
@@ -414,8 +488,10 @@ async function openWeeklyScheduleFromFrame(
 
   if (await hasNoEnrolledClasses(frame, jobId)) {
     logProgress(jobId, "weekly_schedule:not_enrolled");
-    return "not_enrolled";
+    return { status: "not_enrolled" };
   }
+
+  const termWindowBeforeOpen = await detectTermWindowFromFrame(frame, jobId, "student_center");
 
   const scheduleLink = await waitForSelectorFallback(frame, selectors.scheduleLink, {
     jobId,
@@ -432,7 +508,7 @@ async function openWeeklyScheduleFromFrame(
   });
 
   if (!scheduleLink) {
-    return "missing";
+    return { status: "missing" };
   }
 
   logProgress(jobId, "weekly_schedule:open");
@@ -444,8 +520,17 @@ async function openWeeklyScheduleFromFrame(
     "weekly schedule screen",
   );
   await waitForScheduleScreen(frame, jobId);
+  const termWindow =
+    termWindowBeforeOpen ?? (await detectTermWindowFromFrame(frame, jobId, "weekly_schedule"));
 
-  return "opened";
+  return {
+    status: "opened",
+    termWindow,
+  };
+}
+
+function missingWeeklyScheduleResult(): WeeklyScheduleOpenResult {
+  return { status: "missing" };
 }
 
 async function waitForScheduleScreen(frame: Frame, jobId: string) {
@@ -510,6 +595,12 @@ async function hasNoEnrolledClasses(frame: Frame, jobId: string) {
 }
 
 async function getTermWindowFromSchedule(frame: Frame, jobId: string) {
+  const detectedTermWindow = await detectTermWindowFromFrame(frame, jobId, "weekly_schedule");
+
+  if (detectedTermWindow) {
+    return detectedTermWindow;
+  }
+
   const dateInput = await waitForSelectorFallback(frame, selectors.dateInput, {
     jobId,
     label: "weekly schedule date input",
@@ -522,8 +613,14 @@ async function getTermWindowFromSchedule(frame: Frame, jobId: string) {
     ACTION_TIMEOUT_MS,
   );
   const anchorDate = parseMosaicDate(dateValue) ?? new Date();
+  const termWindow = buildTermWindow(anchorDate);
 
-  return buildTermWindow(anchorDate);
+  logProgress(jobId, "term:fallback_from_date", {
+    date: dateValue,
+    term: termWindow.term,
+  });
+
+  return termWindow;
 }
 
 async function scrapeWeek(frame: Frame, monday: Date, jobId: string) {
@@ -623,6 +720,120 @@ type TermWindow = {
   mondays: Date[];
 };
 
+type ExplicitTerm = {
+  year: number;
+  label: string;
+  season: "FALL" | "SUMMER" | "WINTER";
+};
+
+async function detectTermWindowFromFrame(frame: Frame, jobId: string, source: string) {
+  const [bodyText, html] = await Promise.all([
+    frame
+      .locator("body")
+      .innerText({ timeout: ACTION_TIMEOUT_MS })
+      .catch(() => ""),
+    frame.content().catch(() => ""),
+  ]);
+  const termWindow = parseTermWindowFromText(`${bodyText}\n${html}`);
+
+  if (termWindow) {
+    logProgress(jobId, "term:detected", {
+      source,
+      term: termWindow.term,
+    });
+  }
+
+  return termWindow;
+}
+
+function parseTermWindowFromText(text: string) {
+  const explicitTerm = parseExplicitTerm(text);
+
+  return explicitTerm ? buildTermWindowFromExplicitTerm(explicitTerm) : null;
+}
+
+function parseExplicitTerm(text: string): ExplicitTerm | null {
+  const normalizedText = text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const yearFirstMatch = normalizedText.match(
+    /\b(20\d{2})\s+(fall|winter|summer|spring(?:\s*[/&-]\s*summer)?)\s*(?:schedule|term|classes)?\b/i,
+  );
+
+  if (yearFirstMatch?.[1] && yearFirstMatch[2]) {
+    return explicitTermFromParts(yearFirstMatch[2], yearFirstMatch[1]);
+  }
+
+  const seasonFirstMatch = normalizedText.match(
+    /\b(fall|winter|summer|spring(?:\s*[/&-]\s*summer)?)\s+(20\d{2})\s*(?:schedule|term|classes)?\b/i,
+  );
+
+  if (seasonFirstMatch?.[1] && seasonFirstMatch[2]) {
+    return explicitTermFromParts(seasonFirstMatch[1], seasonFirstMatch[2]);
+  }
+
+  return null;
+}
+
+function explicitTermFromParts(rawSeason: string, rawYear: string): ExplicitTerm {
+  const normalizedSeason = rawSeason.toLowerCase().replace(/\s+/g, "");
+  const year = Number.parseInt(rawYear, 10);
+
+  if (normalizedSeason === "fall") {
+    return {
+      label: "Fall",
+      season: "FALL",
+      year,
+    };
+  }
+
+  if (normalizedSeason === "winter") {
+    return {
+      label: "Winter",
+      season: "WINTER",
+      year,
+    };
+  }
+
+  if (normalizedSeason.includes("spring") && normalizedSeason.includes("summer")) {
+    return {
+      label: "Spring/Summer",
+      season: "SUMMER",
+      year,
+    };
+  }
+
+  return {
+    label: normalizedSeason === "spring" ? "Spring" : "Summer",
+    season: "SUMMER",
+    year,
+  };
+}
+
+function buildTermWindowFromExplicitTerm(term: ExplicitTerm): TermWindow {
+  if (term.season === "WINTER") {
+    return {
+      mondays: mondaysBetween(utcDate(term.year, 0, 1), utcDate(term.year, 3, 30)),
+      term: `${term.label} ${term.year}`,
+    };
+  }
+
+  if (term.season === "SUMMER") {
+    return {
+      mondays: mondaysBetween(utcDate(term.year, 4, 1), utcDate(term.year, 7, 31)),
+      term: `${term.label} ${term.year}`,
+    };
+  }
+
+  return {
+    mondays: mondaysBetween(utcDate(term.year, 8, 1), utcDate(term.year, 11, 31)),
+    term: `${term.label} ${term.year}`,
+  };
+}
+
 function buildTermWindow(anchorDate: Date): TermWindow {
   const year = anchorDate.getUTCFullYear();
   const month = anchorDate.getUTCMonth();
@@ -649,7 +860,7 @@ function buildTermWindow(anchorDate: Date): TermWindow {
 
 function mondaysBetween(start: Date, end: Date) {
   const mondays: Date[] = [];
-  let cursor = startOfMondayWeek(start);
+  let cursor = firstMondayOnOrAfter(start);
 
   while (cursor <= end) {
     mondays.push(cursor);
@@ -659,13 +870,13 @@ function mondaysBetween(start: Date, end: Date) {
   return mondays;
 }
 
-function startOfMondayWeek(date: Date) {
+function firstMondayOnOrAfter(date: Date) {
   const day = date.getUTCDay();
-  const daysSinceMonday = (day + 6) % 7;
+  const daysUntilMonday = (8 - day) % 7;
 
   return addUtcDays(
     utcDate(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    -daysSinceMonday,
+    daysUntilMonday,
   );
 }
 
@@ -682,21 +893,32 @@ function formatMosaicDate(date: Date) {
   const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
   const year = date.getUTCFullYear();
 
-  return `${day}/${month}/${year}`;
+  return `${year}/${month}/${day}`;
 }
 
 function parseMosaicDate(value: string) {
-  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const normalizedValue = value.trim();
+  const yearFirstMatch = normalizedValue.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
 
-  if (!match?.[1] || !match[2] || !match[3]) {
-    return null;
+  if (yearFirstMatch?.[1] && yearFirstMatch[2] && yearFirstMatch[3]) {
+    return utcDate(
+      Number.parseInt(yearFirstMatch[1], 10),
+      Number.parseInt(yearFirstMatch[2], 10) - 1,
+      Number.parseInt(yearFirstMatch[3], 10),
+    );
   }
 
-  return utcDate(
-    Number.parseInt(match[3], 10),
-    Number.parseInt(match[2], 10) - 1,
-    Number.parseInt(match[1], 10),
-  );
+  const dayFirstMatch = normalizedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (dayFirstMatch?.[1] && dayFirstMatch[2] && dayFirstMatch[3]) {
+    return utcDate(
+      Number.parseInt(dayFirstMatch[3], 10),
+      Number.parseInt(dayFirstMatch[2], 10) - 1,
+      Number.parseInt(dayFirstMatch[1], 10),
+    );
+  }
+
+  return null;
 }
 
 async function waitForSelectorFallback(
@@ -942,18 +1164,22 @@ function isDevelopmentMode() {
   return process.env.NODE_ENV !== "production";
 }
 
+// Headless unless explicitly opted out: the visible browser (plus its slow-mo
+// delays) exists only for debugging and roughly doubles import time.
 function shouldRunHeadless() {
-  const setting = process.env.SCRAPER_HEADLESS?.trim().toLowerCase();
+  return process.env.SCRAPER_HEADLESS?.trim().toLowerCase() !== "false";
+}
 
-  if (setting === "true") {
-    return true;
-  }
-
-  if (setting === "false") {
-    return false;
-  }
-
-  return process.env.NODE_ENV === "production";
+function buildSectionIdentityKey(section: SectionCreateInput) {
+  return [
+    section.term,
+    section.courseCode,
+    section.componentType,
+    section.sectionCode,
+    section.dayOfWeek,
+    section.startTime.toISOString(),
+    section.endTime.toISOString(),
+  ].join("::");
 }
 
 function emptySaveSectionsResult(): SaveSectionsResult {

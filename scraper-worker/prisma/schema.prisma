@@ -53,12 +53,15 @@ model User {
 }
 
 model ImportJob {
-  id           String          @id @default(cuid())
-  userId       String
-  status       ImportJobStatus @default(QUEUED)
-  errorMessage String?
-  startedAt    DateTime?
-  finishedAt   DateTime?
+  id              String          @id @default(cuid())
+  userId          String
+  status          ImportJobStatus @default(QUEUED)
+  errorMessage    String?
+  progressStage   String?
+  progressCurrent Int?
+  progressTotal   Int?
+  startedAt       DateTime?
+  finishedAt      DateTime?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   sections     Section[]
   createdAt    DateTime        @default(now())

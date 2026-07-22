@@ -1,107 +1,298 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { SignOutButton } from "@/components/sign-out-button";
+import { AppShell } from "@/components/app-shell";
+import { NoticeBanner } from "@/components/notice-banner";
+import { PendingButton } from "@/components/pending-button";
+import { formatDate, formatDay, formatStatus, formatUserDisplayName, getInitials, toClockTime } from "@/lib/format";
+import { avatarColorClass, badge, button, statCard, textarea } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
-import { listSectionsForUser } from "@/server/lab-partner";
+import { listSectionDiscoveryForUser } from "@/server/lab-partner";
+
+import { sendPartnerRequest } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Sections | LabPartner",
+  title: "Find partners | PartnerUp",
 };
 
-export default async function SectionsPage() {
+type DiscoverySection = Awaited<ReturnType<typeof listSectionDiscoveryForUser>>[number];
+
+type DiscoveryCourseGroup = {
+  courseCode: string;
+  sections: DiscoverySection[];
+  term: string;
+};
+
+type SectionsPageProps = {
+  searchParams?: Promise<{
+    course?: string;
+    notice?: string;
+  }>;
+};
+
+export default async function SectionsPage({ searchParams }: SectionsPageProps) {
   const user = await requirePageUser();
-  const sections = await listSectionsForUser(user.id);
+  const resolvedSearchParams = await searchParams;
+  const notice = resolvedSearchParams?.notice;
+  const activeCourse = resolvedSearchParams?.course;
+  const discoverySections = await listSectionDiscoveryForUser(user.id);
+  const groupedSections = groupDiscoverySections(discoverySections);
+  const courseOptions = [...new Set(discoverySections.map((entry) => entry.section.courseCode))].sort();
+  const visibleGroups = activeCourse
+    ? groupedSections.filter((group) => group.courseCode === activeCourse)
+    : groupedSections;
+
+  const availableClassmatesCount = discoverySections.reduce(
+    (count, discoverySection) => count + discoverySection.matches.length,
+    0,
+  );
+  const discoverableSectionCount = discoverySections.filter(
+    (discoverySection) => discoverySection.matches.length > 0,
+  ).length;
+  const matchedSectionCount = discoverySections.filter(
+    (discoverySection) => discoverySection.matchedPartner !== null,
+  ).length;
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-          <Link className="flex items-center gap-3" href="/">
-            <span className="grid size-10 place-items-center rounded bg-[#7A003C] text-sm font-bold text-white">
-              LP
-            </span>
-            <span>
-              <span className="block text-sm font-semibold uppercase text-[#7A003C]">McMaster</span>
-              <span className="block text-lg font-bold leading-none">LabPartner</span>
-            </span>
+    <AppShell active="discovery" pageTitle="Find partners" user={user}>
+      <h1 className="font-display text-2xl font-bold text-zinc-950">Find partners</h1>
+      <p className="mt-1 text-[15px] text-zinc-500">
+        Browse classmates who are actively looking for partners in your imported labs and
+        tutorials.
+      </p>
+
+      <NoticeBanner clearHref="/sections" notice={notice} />
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={statCard}>
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Your sections</p>
+          <p className="mt-1 font-display text-2xl font-bold text-zinc-950">
+            {discoverySections.length}
+          </p>
+        </div>
+        <div className={statCard}>
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
+            Matched sections
+          </p>
+          <p className="mt-1 font-display text-2xl font-bold text-brand">{matchedSectionCount}</p>
+        </div>
+        <div className={statCard}>
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
+            Sections with classmates
+          </p>
+          <p className="mt-1 font-display text-2xl font-bold text-brand">
+            {discoverableSectionCount}
+          </p>
+        </div>
+        <div className={statCard}>
+          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
+            Available classmates
+          </p>
+          <p className="mt-1 font-display text-2xl font-bold text-zinc-950">
+            {availableClassmatesCount}
+          </p>
+        </div>
+      </div>
+
+      {discoverySections.length === 0 ? (
+        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-8 text-center shadow-sm">
+          <h2 className="text-xl font-black text-zinc-950">No sections to browse yet</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">
+            Import your Mosaic schedule first. Once your labs and tutorials are saved, this page
+            will show classmates who made matching sections discoverable.
+          </p>
+          <Link className={`${button.primary} mt-5`} href="/import">
+            Import from Mosaic
           </Link>
-          <nav className="flex items-center gap-2 text-sm font-semibold">
-            <Link
-              className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
-              href="/import"
-            >
-              Import
+        </div>
+      ) : (
+        <>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <Link className={pillClass(!activeCourse)} href="/sections">
+              All sections
             </Link>
-            <Link
-              className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
-              href="/profile"
-            >
-              Profile
-            </Link>
-            <SignOutButton className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]" />
-          </nav>
-        </header>
-
-        <section className="py-10">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-black text-zinc-950">Sections</h1>
-              <p className="mt-2 text-sm leading-6 text-zinc-600">
-                Lab and tutorial sections imported for {user.email}.
-              </p>
-            </div>
-            <Link
-              className="rounded bg-[#7A003C] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#5f0030]"
-              href="/import"
-            >
-              Import from Mosaic
-            </Link>
+            {courseOptions.map((course) => (
+              <Link
+                className={pillClass(activeCourse === course)}
+                href={`/sections?course=${encodeURIComponent(course)}`}
+                key={course}
+              >
+                {course}
+              </Link>
+            ))}
           </div>
 
-          <div className="mt-6">
-            {sections.length === 0 ? (
-              <p className="rounded border border-dashed border-zinc-300 bg-white px-4 py-5 text-sm text-zinc-600">
-                No sections have been imported for this account yet.
-              </p>
-            ) : (
-              <div className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white shadow-sm">
-                {sections.map((section) => (
-                  <article
-                    className="grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto]"
-                    key={section.id}
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded bg-[#7A003C] px-2 py-1 text-xs font-bold text-white">
-                          {section.componentType === "LAB" ? "Lab" : "Tutorial"}
-                        </span>
-                        <h2 className="font-black text-zinc-950">{section.courseCode}</h2>
-                        <p className="text-sm font-semibold text-zinc-500">{section.sectionCode}</p>
-                      </div>
-                      <p className="mt-2 text-sm text-zinc-600">
-                        {formatDay(section.dayOfWeek)} from {toClockTime(section.startTime)} to{" "}
-                        {toClockTime(section.endTime)}
-                      </p>
-                    </div>
-                    <p className="text-sm font-semibold text-zinc-700 sm:text-right">
-                      {section.location || "Location TBA"}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            )}
+          <div className="mt-6 grid gap-6">
+            {visibleGroups.map((group) => (
+              <section
+                className="rounded-xl border border-zinc-200 bg-white shadow-sm"
+                key={`${group.term}-${group.courseCode}`}
+              >
+                <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-semibold text-brand">{group.term}</p>
+                    <h2 className="font-display text-xl font-bold text-zinc-950">
+                      {group.courseCode}
+                    </h2>
+                  </div>
+                  <span className={badge.neutral}>
+                    {group.sections.length} {group.sections.length === 1 ? "section" : "sections"}
+                  </span>
+                </header>
+
+                <div className="divide-y divide-zinc-200">
+                  {group.sections.map((discoverySection) => (
+                    <DiscoverySectionBlock
+                      discoverySection={discoverySection}
+                      key={discoverySection.section.id}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
-        </section>
-      </section>
-    </main>
+        </>
+      )}
+    </AppShell>
   );
 }
 
-function formatDay(dayOfWeek: string) {
-  return dayOfWeek.charAt(0) + dayOfWeek.slice(1).toLowerCase();
+function DiscoverySectionBlock({ discoverySection }: { discoverySection: DiscoverySection }) {
+  const { matchedPartner, matches, section } = discoverySection;
+
+  return (
+    <div className="px-5 py-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={badge.brand}>{section.componentType === "LAB" ? "Lab" : "Tutorial"}</span>
+        <h3 className="font-bold text-zinc-950">{section.sectionCode}</h3>
+        {matchedPartner ? (
+          <span className={badge.matched}>Matched</span>
+        ) : (
+          <span className={badge.neutral}>
+            {matches.length} {matches.length === 1 ? "classmate" : "classmates"}
+          </span>
+        )}
+        <span className="text-sm text-zinc-500">
+          {formatDay(section.dayOfWeek)} {toClockTime(section.startTime)}–
+          {toClockTime(section.endTime)} · {section.location || "Location TBA"}
+        </span>
+      </div>
+
+      <div className="mt-4">
+        {matchedPartner ? (
+          <article className="max-w-md rounded-xl border border-brand/25 bg-brand/[0.04] px-4 py-4">
+            <p className="text-xs font-bold uppercase text-brand">Confirmed partner</p>
+            <h4 className="mt-2 font-bold text-zinc-950">
+              {formatUserDisplayName(matchedPartner.partner)}
+            </h4>
+            <p className="mt-1 text-sm font-semibold text-zinc-600">{matchedPartner.partner.email}</p>
+            <p className="mt-1 text-xs font-semibold text-zinc-500">
+              Matched on {formatDate(matchedPartner.matchedAt)}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-zinc-600">
+              You&apos;re partnered up for this section, so it no longer appears in discovery. Manage
+              this from{" "}
+              <Link className="font-bold text-brand hover:underline" href="/settings">
+                Settings
+              </Link>
+              .
+            </p>
+          </article>
+        ) : matches.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-zinc-300 bg-stone-50 px-4 py-5 text-sm leading-6 text-zinc-500">
+            No classmates have enabled discoverability for this section yet.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {matches.map((match) => (
+              <CandidateCard
+                key={match.discoverableSectionId}
+                match={match}
+                sectionId={section.id}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-function toClockTime(date: Date) {
-  return date.toISOString().slice(11, 16);
+function CandidateCard({
+  match,
+  sectionId,
+}: {
+  match: DiscoverySection["matches"][number];
+  sectionId: string;
+}) {
+  const name = formatUserDisplayName(match.user);
+  const programLabel = [match.user.year, match.user.program].filter(Boolean).join(" · ");
+
+  return (
+    <article className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5">
+      <div className="flex items-center gap-3">
+        <span
+          className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${avatarColorClass(match.user.id)}`}
+        >
+          {getInitials(name)}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[15px] font-bold text-zinc-950">{name}</p>
+          <p className="truncate text-xs text-zinc-500">{programLabel || match.user.email}</p>
+        </div>
+      </div>
+
+      <p className="flex-1 text-sm leading-6 text-zinc-600">
+        {match.note ?? "No partner note provided."}
+      </p>
+
+      {match.request ? (
+        <p className="inline-flex w-fit rounded border border-zinc-200 bg-stone-50 px-3 py-1 text-xs font-bold uppercase text-zinc-600">
+          Request {formatStatus(match.request.status)}
+        </p>
+      ) : (
+        <form action={sendPartnerRequest} className="grid gap-2">
+          <input name="receiverId" type="hidden" value={match.user.id} />
+          <input name="sectionId" type="hidden" value={sectionId} />
+          <textarea
+            className={`${textarea} min-h-16 text-sm`}
+            maxLength={180}
+            name="message"
+            placeholder="Optional short message"
+            rows={2}
+          />
+          <PendingButton className={`${button.primary} w-full`} pendingLabel="Sending...">
+            Send request
+          </PendingButton>
+        </form>
+      )}
+    </article>
+  );
+}
+
+function pillClass(active: boolean) {
+  return `rounded-full border px-3.5 py-2 text-[13.5px] font-semibold transition-colors ${
+    active
+      ? "border-brand bg-brand text-white"
+      : "border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand"
+  }`;
+}
+
+function groupDiscoverySections(discoverySections: DiscoverySection[]) {
+  const groups = new Map<string, DiscoveryCourseGroup>();
+
+  for (const discoverySection of discoverySections) {
+    const { section } = discoverySection;
+    const key = `${section.term}::${section.courseCode}`;
+    const group = groups.get(key) ?? {
+      courseCode: section.courseCode,
+      sections: [],
+      term: section.term,
+    };
+
+    group.sections.push(discoverySection);
+    groups.set(key, group);
+  }
+
+  return [...groups.values()];
 }

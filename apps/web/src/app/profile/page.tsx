@@ -1,62 +1,166 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
-import { SignOutButton } from "@/components/sign-out-button";
+import { AppShell } from "@/components/app-shell";
+import { NoticeBanner } from "@/components/notice-banner";
+import { PendingButton } from "@/components/pending-button";
+import { getInitials } from "@/lib/format";
+import { button, input as inputClass, textarea as textareaClass } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
+import { getUserProfile } from "@/server/lab-partner";
+
+import { updateProfileDetails } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Profile | LabPartner",
+  title: "Profile | PartnerUp",
 };
 
-export default async function ProfilePage() {
+type ProfilePageProps = {
+  searchParams?: Promise<{
+    notice?: string;
+  }>;
+};
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const user = await requirePageUser();
+  const notice = (await searchParams)?.notice;
+  const profile = await getUserProfile(user.id);
+
+  const displayName = profile?.displayName ?? profile?.name ?? user.email;
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
-      <section className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-          <Link className="flex items-center gap-3" href="/">
-            <span className="grid size-10 place-items-center rounded bg-[#7A003C] text-sm font-bold text-white">
-              LP
-            </span>
-            <span>
-              <span className="block text-sm font-semibold uppercase text-[#7A003C]">McMaster</span>
-              <span className="block text-lg font-bold leading-none">LabPartner</span>
-            </span>
-          </Link>
-          <nav className="flex items-center gap-2 text-sm font-semibold">
-            <Link
-              className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
-              href="/import"
-            >
-              Import
-            </Link>
-            <Link
-              className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]"
-              href="/sections"
-            >
-              Sections
-            </Link>
-            <SignOutButton className="rounded border border-zinc-300 px-4 py-2 text-zinc-800 transition hover:border-[#7A003C] hover:text-[#7A003C]" />
-          </nav>
-        </header>
+    <AppShell active="profile" pageTitle="Your profile" user={user}>
+      <h1 className="font-display text-2xl font-bold text-zinc-950">Your profile</h1>
 
-        <section className="py-10">
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <h1 className="text-3xl font-black text-zinc-950">Profile</h1>
-            <dl className="mt-6 grid gap-4 text-sm">
-              <div>
-                <dt className="font-semibold text-zinc-500">Name</dt>
-                <dd className="mt-1 text-base font-bold text-zinc-950">{user.name}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-zinc-500">Email</dt>
-                <dd className="mt-1 text-base font-bold text-zinc-950">{user.email}</dd>
-              </div>
-            </dl>
+      <NoticeBanner clearHref="/profile" notice={notice} />
+
+      <div className="mt-6 max-w-xl rounded-2xl border border-zinc-200 bg-white p-7">
+        <div className="mb-6 flex items-center gap-4">
+          <span className="grid size-16 shrink-0 place-items-center rounded-full bg-brand font-display text-xl font-bold text-white">
+            {getInitials(displayName)}
+          </span>
+          <div>
+            <p className="text-lg font-bold text-zinc-950">{displayName}</p>
+            <p className="text-sm text-zinc-500">{user.email}</p>
           </div>
-        </section>
-      </section>
-    </main>
+        </div>
+
+        <form action={updateProfileDetails} className="grid gap-4">
+          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="displayName">
+            Display name
+            <input
+              className={inputClass}
+              defaultValue={displayName}
+              id="displayName"
+              maxLength={80}
+              minLength={2}
+              name="displayName"
+              required
+              type="text"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="program">
+            Program
+            <input
+              className={inputClass}
+              defaultValue={profile?.program ?? ""}
+              id="program"
+              maxLength={100}
+              name="program"
+              placeholder="Computer Science"
+              type="text"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="year">
+            Year
+            <input
+              className={inputClass}
+              defaultValue={profile?.year ?? ""}
+              id="year"
+              maxLength={40}
+              name="year"
+              placeholder="Level II"
+              type="text"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="bio">
+            About you
+            <textarea
+              className={`${textareaClass} min-h-24`}
+              defaultValue={profile?.bio ?? ""}
+              id="bio"
+              maxLength={500}
+              name="bio"
+              placeholder="Looking for someone reliable to split lab reports with."
+              rows={3}
+            />
+          </label>
+
+          <div className="mt-2 border-t border-zinc-100 pt-4">
+            <p className="text-sm font-bold text-zinc-950">Contact info</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Only shown to classmates you&apos;ve confirmed as a partner — never in Find
+              partners or Requests.
+            </p>
+
+            <div className="mt-3 grid gap-4">
+              <label
+                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                htmlFor="contactPhone"
+              >
+                Phone number
+                <input
+                  className={inputClass}
+                  defaultValue={profile?.contactPhone ?? ""}
+                  id="contactPhone"
+                  maxLength={30}
+                  name="contactPhone"
+                  placeholder="905-555-0100"
+                  type="tel"
+                />
+              </label>
+
+              <label
+                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                htmlFor="contactInstagram"
+              >
+                Instagram
+                <input
+                  className={inputClass}
+                  defaultValue={profile?.contactInstagram ?? ""}
+                  id="contactInstagram"
+                  maxLength={50}
+                  name="contactInstagram"
+                  placeholder="@yourhandle"
+                  type="text"
+                />
+              </label>
+
+              <label
+                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                htmlFor="contactOther"
+              >
+                Other (Discord, Snapchat, etc.)
+                <input
+                  className={inputClass}
+                  defaultValue={profile?.contactOther ?? ""}
+                  id="contactOther"
+                  maxLength={200}
+                  name="contactOther"
+                  placeholder="Discord: yourname#0001"
+                  type="text"
+                />
+              </label>
+            </div>
+          </div>
+
+          <PendingButton className={`${button.primary} justify-self-start`} pendingLabel="Saving...">
+            Save changes
+          </PendingButton>
+        </form>
+      </div>
+    </AppShell>
   );
 }

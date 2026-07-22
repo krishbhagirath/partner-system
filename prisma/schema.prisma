@@ -39,6 +39,12 @@ enum PartnerRequestStatus {
   CANCELED
 }
 
+enum PartnerNeedResponse {
+  YES
+  NO
+  UNSURE
+}
+
 model User {
   id                      String                @id @default(cuid())
   email                   String                @unique
@@ -47,6 +53,14 @@ model User {
   name                    String?
   displayName             String?
   passwordHash            String?
+  program                 String?
+  year                    String?
+  bio                     String?
+  notifyOnRequest         Boolean               @default(true)
+  notifyOnMatch           Boolean               @default(true)
+  contactPhone            String?
+  contactInstagram        String?
+  contactOther            String?
   accounts                Account[]
   sessions                Session[]
   importJobs              ImportJob[]
@@ -54,6 +68,7 @@ model User {
   discoverableSections    DiscoverableSection[]
   sentPartnerRequests     PartnerRequest[]      @relation("PartnerRequestSender")
   receivedPartnerRequests PartnerRequest[]      @relation("PartnerRequestReceiver")
+  partnerNeedVotes        PartnerNeedVote[]
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
 }
@@ -96,12 +111,15 @@ model VerificationToken {
 }
 
 model ImportJob {
-  id           String          @id @default(cuid())
-  userId       String
-  status       ImportJobStatus @default(QUEUED)
-  errorMessage String?
-  startedAt    DateTime?
-  finishedAt   DateTime?
+  id              String          @id @default(cuid())
+  userId          String
+  status          ImportJobStatus @default(QUEUED)
+  errorMessage    String?
+  progressStage   String?
+  progressCurrent Int?
+  progressTotal   Int?
+  startedAt       DateTime?
+  finishedAt      DateTime?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   sections     Section[]
   createdAt    DateTime        @default(now())
@@ -169,4 +187,21 @@ model PartnerRequest {
   @@index([receiverId, status])
   @@index([senderId, status])
   @@index([sectionId, status])
+}
+
+// Crowd-sourced signal on whether a course's lab/tutorial actually involves
+// partner work, scoped to course+component (not a specific section/term) so
+// votes pool across every section and term of e.g. "COMPSCI 2C03 Lab".
+model PartnerNeedVote {
+  id            String              @id @default(cuid())
+  userId        String
+  courseCode    String
+  componentType ComponentType
+  response      PartnerNeedResponse
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([userId, courseCode, componentType])
+  @@index([courseCode, componentType])
 }

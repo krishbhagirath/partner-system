@@ -1,7 +1,8 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedRoutePattern = /^\/(?:import|profile|sections)(?:\/.*)?$/;
+const protectedRoutePattern =
+  /^\/(?:import|profile|sections|dashboard|requests|matches|settings)(?:\/.*)?$/;
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -26,5 +27,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/import/:path*", "/profile/:path*", "/sections/:path*"],
+  matcher: [
+    "/import/:path*",
+    "/profile/:path*",
+    "/sections/:path*",
+    "/dashboard/:path*",
+    "/requests/:path*",
+    "/matches/:path*",
+    "/settings/:path*",
+  ],
 };

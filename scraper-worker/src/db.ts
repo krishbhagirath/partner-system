@@ -75,9 +75,24 @@ export async function updateJobStatus(jobId: string, stage: WorkerJobStage, erro
   return prisma.importJob.update({
     data: {
       errorMessage: stage === "FAILED" ? (errorMessage ?? "Scrape failed.") : null,
+      progressStage: stage,
       status,
-      ...(stage === "LOGGING_IN" ? { startedAt: now, finishedAt: null } : {}),
+      ...(stage === "LOGGING_IN"
+        ? { progressCurrent: null, progressTotal: null, startedAt: now, finishedAt: null }
+        : {}),
       ...(terminalStages.has(stage) ? { finishedAt: now } : {}),
+    },
+    where: {
+      id: jobId,
+    },
+  });
+}
+
+export async function updateJobProgress(jobId: string, current: number, total: number) {
+  return prisma.importJob.update({
+    data: {
+      progressCurrent: current,
+      progressTotal: total,
     },
     where: {
       id: jobId,
