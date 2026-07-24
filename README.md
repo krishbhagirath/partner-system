@@ -40,9 +40,3 @@ spam or awkward "does anyone need a partner?" posts.
 
 Next.js (App Router) · TypeScript · Tailwind CSS · Prisma · Supabase PostgreSQL ·
 Auth.js · Express + Playwright (schedule scraper) · Resend.
-
-## Development
-
-Setup, configuration, and deployment instructions live in
-**[DEVELOPMENT.md](DEVELOPMENT.md)**. The scraper worker has its own guide in
-**[scraper-worker/README.md](scraper-worker/README.md)**.
