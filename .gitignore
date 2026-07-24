@@ -54,5 +54,8 @@ handoff.md
 temp.py
 schedule.json
 *.tmp.*
+
+# internal docs — keep local, not for the public repo
 DEVELOPMENT.md
+scraper-worker/README.md
 
