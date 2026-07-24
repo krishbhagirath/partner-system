@@ -151,6 +151,18 @@ export function disconnectDb() {
   return prisma.$disconnect();
 }
 
+export function getUserForNotification(userId: string) {
+  return prisma.user.findUnique({
+    select: {
+      displayName: true,
+      email: true,
+    },
+    where: {
+      id: userId,
+    },
+  });
+}
+
 function buildCourseSectionKey(courseCode: string, sectionCode: string) {
   return `${courseCode.trim().toUpperCase()}::${sectionCode.trim().toUpperCase()}`;
 }

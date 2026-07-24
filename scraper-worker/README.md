@@ -12,7 +12,12 @@ shared Supabase database. Called by the Next.js app's `POST /api/import/start`.
 | `POST /scrape` | `x-worker-secret` header | Runs one import job                   |
 
 `POST /scrape` is protected by a shared secret (timing-safe comparison) and a basic
-global rate limit (10 requests per 10 minutes → 429 with `Retry-After`).
+global rate limit (10 requests per 10 minutes → 429 with `Retry-After`). It returns
+`202` immediately and runs the scrape in the background behind a concurrency cap
+(`SCRAPER_MAX_CONCURRENCY`, default 2); extra jobs queue in FIFO order and start as
+running slots free up. Job status (`RUNNING`/`SUCCEEDED`/`FAILED`) is written straight
+to the database, which the web app polls. On success the worker emails the user that
+their schedule has been imported (best-effort — see email vars below).
 
 ## Environment Variables
 
@@ -24,6 +29,10 @@ global rate limit (10 requests per 10 minutes → 429 with `Retry-After`).
 | `SCRAPER_HEADLESS`  | no                         | Headless by default everywhere; set `false` to watch the browser while debugging (slower)              |
 | `NODE_ENV`          | yes in production          | `production` disables failure-artifact dumps                                                           |
 | `SCRAPER_FULL_TERM` | no                         | `true` scans every week of the term instead of stopping after 4 consecutive weeks with no new sections |
+| `SCRAPER_MAX_CONCURRENCY` | no (default 2)       | Max Chromium instances running at once; extra imports queue. Keep low on a small-RAM VM                 |
+| `RESEND_API_KEY`    | no                         | Resend API key for the "import complete" email. If unset, the email is skipped (job still succeeds)    |
+| `EMAIL_FROM`        | no                         | "From" address for the email, e.g. `PartnerUp <onboarding@resend.dev>`. Required alongside `RESEND_API_KEY` |
+| `NEXT_PUBLIC_APP_URL` | no                       | Public app URL; adds a "Go to dashboard" button to the email. Button omitted if unset                  |
 
 Variables are read from the process environment first, then `.env` / `.env.local` in
 this directory. Missing `DATABASE_URL` or `WORKER_SECRET` crashes the process at
@@ -61,6 +70,11 @@ npm test                     # parser unit tests
    WORKER_SECRET=<same value as the web app>
    PORT=8080
    SCRAPER_HEADLESS=true
+   SCRAPER_MAX_CONCURRENCY=2
+   # Optional: enables the "your schedule has been imported" email.
+   RESEND_API_KEY=<resend api key>
+   EMAIL_FROM=PartnerUp <onboarding@resend.dev>
+   NEXT_PUBLIC_APP_URL=https://<your-deployed-domain>
    ```
 
 4. **Run as a service** (systemd unit):
@@ -97,3 +111,8 @@ npm test                     # parser unit tests
   `NODE_ENV=production`.
 - The service updates `ImportJob` status through every stage, so the web app can poll
   progress even if the HTTP response is lost.
+- `/scrape` enqueues the job and returns `202` right away; at most
+  `SCRAPER_MAX_CONCURRENCY` scrapes run concurrently and the rest wait in FIFO order.
+- On a successful import the worker emails the user (when `RESEND_API_KEY`/`EMAIL_FROM`
+  are set). Email failures are logged and never fail the job — the sections are already
+  saved by the time the email is attempted.

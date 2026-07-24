@@ -6,8 +6,10 @@ import http from "node:http";
 import express from "express";
 import { z } from "zod";
 
-import { disconnectDb, requireEnv } from "./db.js";
-import { runScrapeJob } from "./scraper.js";
+import { disconnectDb, getUserForNotification, requireEnv } from "./db.js";
+import { isEmailConfigured, sendImportCompletedEmail } from "./email.js";
+import { createTaskQueue } from "./queue.js";
+import { runScrapeJob, type ScrapeJobResult } from "./scraper.js";
 
 const scrapeRequestSchema = z
   .object({
@@ -20,6 +22,8 @@ const scrapeRequestSchema = z
 
 const workerSecret = requireEnv("WORKER_SECRET");
 const port = parsePort(process.env.PORT);
+const maxConcurrency = parseMaxConcurrency(process.env.SCRAPER_MAX_CONCURRENCY);
+const scrapeQueue = createTaskQueue(maxConcurrency);
 const app = express();
 
 // Basic global fixed-window rate limit. Only the web app calls this service,
@@ -36,7 +40,7 @@ app.get("/health", (_request, response) => {
   response.status(200).json({ ok: true });
 });
 
-app.post("/scrape", async (request, response) => {
+app.post("/scrape", (request, response) => {
   if (!isAuthorized(request.get("WORKER_SECRET") ?? request.get("x-worker-secret") ?? "")) {
     response.status(401).json({ error: "Unauthorized" });
     return;
@@ -60,21 +64,60 @@ app.post("/scrape", async (request, response) => {
     return;
   }
 
-  try {
-    const result = await runScrapeJob(parsedRequest.data);
+  const job = parsedRequest.data;
 
-    response.status(200).json({
-      ok: true,
-      result,
+  // Run in the background behind the concurrency cap and respond immediately.
+  // runScrapeJob writes RUNNING/SUCCEEDED/FAILED straight to the DB, which the
+  // web app polls, so the caller doesn't need the scrape result in the response.
+  void scrapeQueue
+    .enqueue(async () => {
+      const result = await runScrapeJob(job);
+      await notifyImportComplete(job.userId, result);
+
+      return result;
+    })
+    .catch(() => {
+      // runScrapeJob already recorded FAILED (with credentials redacted) and
+      // notifyImportComplete swallows its own errors; log at queue level only.
+      logLine("error", "scrape:job_failed", { jobId: job.jobId });
     });
+
+  logLine("info", "scrape:enqueued", {
+    active: scrapeQueue.active,
+    jobId: job.jobId,
+    pending: scrapeQueue.pending,
+  });
+
+  response.status(202).json({ ok: true, pending: scrapeQueue.pending, queued: true });
+});
+
+async function notifyImportComplete(userId: string, result: ScrapeJobResult) {
+  if (!isEmailConfigured()) {
+    logLine("info", "email:skipped", { reason: "not_configured" });
+    return;
+  }
+
+  try {
+    const user = await getUserForNotification(userId);
+
+    if (!user?.email) {
+      logLine("warn", "email:skipped", { reason: "no_email" });
+      return;
+    }
+
+    await sendImportCompletedEmail({
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
+      displayName: user.displayName,
+      sectionsCount: result.saveResult.created,
+      to: user.email,
+    });
+    logLine("info", "email:sent", { userId });
   } catch (error) {
-    // runScrapeJob already redacts credentials from the error message.
-    response.status(500).json({
-      error: error instanceof Error ? error.message : "Scrape failed.",
-      ok: false,
+    logLine("error", "email:failed", {
+      message: error instanceof Error ? error.message : "Unknown email error.",
     });
   }
-});
+}
 
 const server = http.createServer(app);
 
@@ -114,6 +157,22 @@ function parsePort(rawPort: string | undefined) {
   }
 
   return parsedPort;
+}
+
+function parseMaxConcurrency(rawValue: string | undefined) {
+  if (!rawValue) {
+    return 2;
+  }
+
+  const parsedValue = Number.parseInt(rawValue, 10);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    throw new Error(
+      `SCRAPER_MAX_CONCURRENCY must be an integer >= 1, got "${rawValue}".`,
+    );
+  }
+
+  return parsedValue;
 }
 
 function takeRateLimitSlot() {
