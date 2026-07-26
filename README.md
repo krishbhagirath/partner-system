@@ -8,7 +8,7 @@ https://github.com/user-attachments/assets/6438a2b4-6350-4baf-934c-cf033ffd23e9
 
 PartnerUp matches students who share the same labs and tutorials. Import your Mosaic
 schedule, mark the sections you want a partner for, see classmates in those exact
-sections who are also looking, and send or accept partner requests — no more group-chat
+sections who are also looking, and send or accept partner requests. No more group-chat
 spam or awkward "does anyone need a partner?" posts.
 
 ## Features
