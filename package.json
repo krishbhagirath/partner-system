@@ -12,7 +12,6 @@
   "scripts": {
     "dev": "npm run dev --workspace @labpartner/web",
     "build": "npm run db:generate && npm run build --workspace @labpartner/web",
-    "postinstall": "prisma generate",
     "start": "npm run start --workspace @labpartner/web",
     "lint": "npm run lint --workspace @labpartner/web",
     "typecheck": "npm run db:generate && npm run typecheck --workspace @labpartner/web",
