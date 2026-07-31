@@ -32,6 +32,19 @@ const envSchema = z
         });
       }
     }
+
+    // AUTH_SECRET must have real entropy in production — a weak value allows
+    // JWT session forgery (full auth bypass). `npx auth secret` produces a
+    // suitable value. (WORKER_SECRET strength is recommended in .env.example
+    // but not hard-enforced here, since it is firewall-scoped and blocking a
+    // deploy on its length is disproportionate.)
+    if (values.AUTH_SECRET && values.AUTH_SECRET.length < 32) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "AUTH_SECRET must be at least 32 characters in production.",
+        path: ["AUTH_SECRET"],
+      });
+    }
   });
 
 const parsedEnv = envSchema.safeParse({

@@ -1,5 +1,10 @@
 import { handlers } from "@/auth";
-import { checkRateLimit, rateLimitExceededResponse, rateLimitRules } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitExceededResponse,
+  rateLimitRules,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -24,10 +29,4 @@ export function POST(request: Request) {
 
 function isCredentialsSignIn(request: Request) {
   return new URL(request.url).pathname.endsWith("/callback/credentials");
-}
-
-function getClientIp(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
-  return forwardedFor?.split(",")[0]?.trim() || "unknown";
 }

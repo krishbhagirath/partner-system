@@ -754,51 +754,83 @@ export async function respondToPartnerRequest(
   const participantIds = [request.senderId, request.receiverId];
   const sectionIdentityFilter = buildSectionIdentityFilter(request.section);
 
-  return db.$transaction(async (tx) => {
-    const existingMatchForEitherUser = await tx.partnerRequest.findFirst({
-      where: {
-        OR: [{ senderId: { in: participantIds } }, { receiverId: { in: participantIds } }],
-        section: {
-          is: sectionIdentityFilter,
-        },
-        status: "ACCEPTED",
-      },
-    });
+  try {
+    return await db.$transaction(
+      async (tx) => {
+        const existingMatchForEitherUser = await tx.partnerRequest.findFirst({
+          where: {
+            OR: [{ senderId: { in: participantIds } }, { receiverId: { in: participantIds } }],
+            section: {
+              is: sectionIdentityFilter,
+            },
+            status: "ACCEPTED",
+          },
+        });
 
-    if (existingMatchForEitherUser) {
+        if (existingMatchForEitherUser) {
+          throw new PartnerRequestError(
+            "One of you already has a confirmed partner for this section.",
+            409,
+          );
+        }
+
+        const acceptedRequest = await tx.partnerRequest.update({
+          data: {
+            status: "ACCEPTED",
+          },
+          where: {
+            id: requestId,
+          },
+        });
+
+        await tx.partnerRequest.updateMany({
+          data: {
+            status: "CANCELED",
+          },
+          where: {
+            id: {
+              not: requestId,
+            },
+            OR: [{ senderId: { in: participantIds } }, { receiverId: { in: participantIds } }],
+            section: {
+              is: sectionIdentityFilter,
+            },
+            status: "PENDING",
+          },
+        });
+
+        return acceptedRequest;
+      },
+      // Serializable isolation stops two concurrent accepts from both passing
+      // the "already matched?" check and creating a double match for one
+      // section (the check-then-write is otherwise a phantom-read race).
+      { isolationLevel: "Serializable" },
+    );
+  } catch (error) {
+    if (error instanceof PartnerRequestError) {
+      throw error;
+    }
+
+    // Postgres serialization failure (Prisma P2034): another accept won the
+    // race. Surface it as a refreshable conflict instead of a 500.
+    if (isTransactionConflict(error)) {
       throw new PartnerRequestError(
-        "One of you already has a confirmed partner for this section.",
+        "One of you just matched — refresh and try again.",
         409,
       );
     }
 
-    const acceptedRequest = await tx.partnerRequest.update({
-      data: {
-        status: "ACCEPTED",
-      },
-      where: {
-        id: requestId,
-      },
-    });
+    throw error;
+  }
+}
 
-    await tx.partnerRequest.updateMany({
-      data: {
-        status: "CANCELED",
-      },
-      where: {
-        id: {
-          not: requestId,
-        },
-        OR: [{ senderId: { in: participantIds } }, { receiverId: { in: participantIds } }],
-        section: {
-          is: sectionIdentityFilter,
-        },
-        status: "PENDING",
-      },
-    });
-
-    return acceptedRequest;
-  });
+function isTransactionConflict(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2034"
+  );
 }
 
 export async function withdrawPartnerRequest(senderId: string, requestId: string) {

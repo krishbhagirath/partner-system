@@ -11,10 +11,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  // Fail closed: any error parsing the session token (e.g. a malformed
+  // Authorization header) is treated as unauthenticated rather than surfacing
+  // as a 500 on every protected route.
+  let token: Awaited<ReturnType<typeof getToken>> = null;
+
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+    });
+  } catch {
+    token = null;
+  }
 
   if (token?.id) {
     return NextResponse.next();

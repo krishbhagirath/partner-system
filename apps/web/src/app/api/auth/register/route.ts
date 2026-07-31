@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { checkRateLimit, rateLimitExceededResponse, rateLimitRules } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitExceededResponse,
+  rateLimitRules,
+} from "@/lib/rate-limit";
 import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { sendEmailVerification } from "@/server/email-verification";
 import { RegistrationError, registerUser } from "@/server/registration";
@@ -24,7 +29,7 @@ const registerRequestSchema = z
       .endsWith("@mcmaster.ca", "Use your @mcmaster.ca email address."),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters.")
+      .min(10, "Password must be at least 10 characters.")
       .max(100, "Password must be at most 100 characters."),
   })
   .strict();
@@ -89,10 +94,4 @@ export async function POST(request: Request) {
 
     return internalErrorResponse();
   }
-}
-
-function getClientIp(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
-  return forwardedFor?.split(",")[0]?.trim() || "unknown";
 }

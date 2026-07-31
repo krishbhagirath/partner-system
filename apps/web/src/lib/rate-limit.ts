@@ -56,6 +56,27 @@ export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResul
   };
 }
 
+// Resolve the client IP for rate-limit keys. Prefer `x-real-ip`, which the
+// hosting proxy (Vercel) sets to the true connecting IP and clients cannot
+// spoof. Never trust the left-most `x-forwarded-for` value — that is the
+// client-supplied hop and rotating it would defeat per-IP limits. Fall back to
+// the right-most forwarded hop (added by the trusted proxy).
+export function getClientIp(request: Request) {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+
+  if (realIp) {
+    return realIp;
+  }
+
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const hops = forwardedFor
+    ?.split(",")
+    .map((hop) => hop.trim())
+    .filter(Boolean);
+
+  return hops?.at(-1) ?? "unknown";
+}
+
 export function rateLimitExceededResponse(retryAfterSeconds: number) {
   return NextResponse.json(
     { error: "Too many requests. Please try again later." },
