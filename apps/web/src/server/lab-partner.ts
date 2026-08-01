@@ -9,6 +9,10 @@ import type {
 } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatSectionLabel } from "@/lib/format";
+import {
+  notifyIncomingPartnerRequest,
+  notifyPartnerMatched,
+} from "@/server/partner-notifications";
 
 export type SectionCreateInput = {
   importJobId?: string | null;
@@ -698,26 +702,29 @@ export async function createPartnerRequest(
     return existingRequest;
   }
 
-  if (existingRequest) {
-    return db.partnerRequest.update({
-      data: {
-        note: normalizedNote,
-        status: "PENDING",
-      },
-      where: {
-        id: existingRequest.id,
-      },
-    });
-  }
+  const request = existingRequest
+    ? await db.partnerRequest.update({
+        data: {
+          note: normalizedNote,
+          status: "PENDING",
+        },
+        where: {
+          id: existingRequest.id,
+        },
+      })
+    : await db.partnerRequest.create({
+        data: {
+          note: normalizedNote,
+          receiverId,
+          sectionId,
+          senderId,
+        },
+      });
 
-  return db.partnerRequest.create({
-    data: {
-      note: normalizedNote,
-      receiverId,
-      sectionId,
-      senderId,
-    },
-  });
+  // Best-effort email nudge to the receiver; never blocks/breaks the request.
+  await notifyIncomingPartnerRequest(request.id);
+
+  return request;
 }
 
 export async function respondToPartnerRequest(
@@ -755,7 +762,7 @@ export async function respondToPartnerRequest(
   const sectionIdentityFilter = buildSectionIdentityFilter(request.section);
 
   try {
-    return await db.$transaction(
+    const accepted = await db.$transaction(
       async (tx) => {
         const existingMatchForEitherUser = await tx.partnerRequest.findFirst({
           where: {
@@ -806,6 +813,11 @@ export async function respondToPartnerRequest(
       // section (the check-then-write is otherwise a phantom-read race).
       { isolationLevel: "Serializable" },
     );
+
+    // Best-effort: email both participants they've matched; never breaks accept.
+    await notifyPartnerMatched(accepted.id);
+
+    return accepted;
   } catch (error) {
     if (error instanceof PartnerRequestError) {
       throw error;
