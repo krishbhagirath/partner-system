@@ -20,6 +20,11 @@ export async function proxy(request: NextRequest) {
     token = await getToken({
       req: request,
       secret: process.env.AUTH_SECRET,
+      // On HTTPS (all Vercel deployments) Auth.js v5 stores the session in a
+      // `__Secure-authjs.session-token` cookie. getToken must be told to read the
+      // secure cookie (and matching salt) or it decodes nothing and every
+      // protected route redirects to /auth/signin. Locally (http) it's false.
+      secureCookie: process.env.NODE_ENV === "production",
     });
   } catch {
     token = null;
