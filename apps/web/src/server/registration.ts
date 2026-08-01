@@ -3,6 +3,7 @@ import "server-only";
 import bcrypt from "bcryptjs";
 
 import { db } from "@/lib/db";
+import { EMAIL_VERIFICATION_ENABLED } from "@/lib/feature-flags";
 
 export class RegistrationError extends Error {
   constructor(
@@ -32,6 +33,10 @@ export async function registerUser({ displayName, email, password }: RegisterUse
         email: normalizedEmail,
         name: normalizedDisplayName,
         passwordHash,
+        // When verification is disabled, mark verified on creation so the field
+        // stays consistent and login isn't gated. When enabled, leave it null so
+        // the email flow drives verification. See feature-flags.ts.
+        emailVerified: EMAIL_VERIFICATION_ENABLED ? null : new Date(),
       },
       select: {
         email: true,

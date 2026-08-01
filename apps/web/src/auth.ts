@@ -6,6 +6,7 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
+import { EMAIL_VERIFICATION_ENABLED } from "@/lib/feature-flags";
 
 const credentialsSchema = z.object({
   email: z.string().trim().email(),
@@ -109,7 +110,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (!user.emailVerified) {
+        // Gated by EMAIL_VERIFICATION_ENABLED (currently off — see feature-flags.ts).
+        if (EMAIL_VERIFICATION_ENABLED && !user.emailVerified) {
           throw new EmailNotVerifiedError();
         }
 

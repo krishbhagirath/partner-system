@@ -7,6 +7,7 @@ import {
   rateLimitExceededResponse,
   rateLimitRules,
 } from "@/lib/rate-limit";
+import { EMAIL_VERIFICATION_ENABLED } from "@/lib/feature-flags";
 import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { sendEmailVerification } from "@/server/email-verification";
 import { RegistrationError, registerUser } from "@/server/registration";
@@ -73,18 +74,27 @@ export async function POST(request: Request) {
   try {
     const user = await registerUser(parsedRequest.data);
 
-    try {
-      await sendEmailVerification(user.email);
-    } catch (error) {
-      // The account exists either way — a failed send just means the
-      // "Resend email" button on the verify-email screen is their recovery
-      // path, so this shouldn't fail the registration itself.
-      logServerError("POST /api/auth/register (sendEmailVerification)", error, {
-        userId: user.id,
-      });
+    // Verification email is only sent when the system is enabled (feature-flags.ts).
+    if (EMAIL_VERIFICATION_ENABLED) {
+      try {
+        await sendEmailVerification(user.email);
+      } catch (error) {
+        // The account exists either way — a failed send just means the
+        // "Resend email" button on the verify-email screen is their recovery
+        // path, so this shouldn't fail the registration itself.
+        logServerError("POST /api/auth/register (sendEmailVerification)", error, {
+          userId: user.id,
+        });
+      }
     }
 
-    return NextResponse.json({ user: { email: user.email, id: user.id } }, { status: 201 });
+    return NextResponse.json(
+      {
+        user: { email: user.email, id: user.id },
+        verificationRequired: EMAIL_VERIFICATION_ENABLED,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof RegistrationError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });

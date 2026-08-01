@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import { alertError, button, input as inputClassName } from "@/lib/ui";
@@ -47,7 +48,30 @@ export function SignUpForm() {
         return;
       }
 
-      router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim())}`);
+      const payload = (await response.json().catch(() => null)) as {
+        verificationRequired?: boolean;
+      } | null;
+
+      // When verification is enabled, send them to the check-your-email screen.
+      if (payload?.verificationRequired) {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim())}`);
+        return;
+      }
+
+      // Verification is off: sign the new account in directly so they land in the
+      // app without re-typing. Fall back to the sign-in page if that fails.
+      const signInResult = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (signInResult?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        router.push("/auth/signin");
+      }
     } catch {
       setError("Unable to create the account. Please try again.");
     } finally {
