@@ -11,19 +11,35 @@ export function SignUpForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const passwordsMatch = password === confirmPassword;
 
   const canSubmit =
     displayName.trim().length >= 2 &&
     email.trim().length > 0 &&
-    password.length >= 8 &&
+    password.length >= 10 &&
+    passwordsMatch &&
     !isSubmitting;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
     setError(null);
+
+    if (password.length < 10) {
+      setError("Password must be at least 10 characters.");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -114,16 +130,43 @@ export function SignUpForm() {
 
       <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="password">
         Password
+        <div className="relative">
+          <input
+            autoComplete="new-password"
+            className={`${inputClassName} pr-16`}
+            id="password"
+            name="password"
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="At least 10 characters"
+            type={showPassword ? "text" : "password"}
+            value={password}
+          />
+          <button
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500 hover:text-zinc-800"
+            onClick={() => setShowPassword((value) => !value)}
+            type="button"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+      </label>
+
+      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="confirm-password">
+        Re-enter password
         <input
           autoComplete="new-password"
           className={inputClassName}
-          id="password"
-          name="password"
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="At least 8 characters"
-          type="password"
-          value={password}
+          id="confirm-password"
+          name="confirm-password"
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          placeholder="Re-enter your password"
+          type={showPassword ? "text" : "password"}
+          value={confirmPassword}
         />
+        {confirmPassword.length > 0 && !passwordsMatch ? (
+          <span className="text-xs font-medium text-red-600">Passwords do not match.</span>
+        ) : null}
       </label>
 
       {error ? (
