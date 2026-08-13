@@ -54,6 +54,18 @@ export function formatSectionLabel(section: {
   return `${section.courseCode} — ${formatComponentType(section.componentType)} ${section.sectionCode}`;
 }
 
+/** Display a stored term ("2026 Fall") as season-first ("Fall 2026"). */
+export function formatTerm(term: string) {
+  const year = term.match(/\b(20\d{2})\b/)?.[1];
+  const season = term.match(/\b(fall|winter|spring|summer)\b/i)?.[1];
+
+  if (year && season) {
+    return `${season.charAt(0).toUpperCase()}${season.slice(1).toLowerCase()} ${year}`;
+  }
+
+  return term;
+}
+
 export function formatRelativeTime(date: Date, now: Date = new Date()) {
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.round(diffMs / 60000);

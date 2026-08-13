@@ -2,6 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
+import { formatTerm } from "@/lib/format";
+
 /**
  * Semester picker for the nav. Sets `?term=<term>` on the current page, which the
  * server pages read to scope everything (sections, discovery, requests, matches)
@@ -35,7 +37,7 @@ export function TermSwitcher({
       >
         {terms.map((term) => (
           <option key={term} value={term}>
-            {term}
+            {formatTerm(term)}
           </option>
         ))}
       </select>

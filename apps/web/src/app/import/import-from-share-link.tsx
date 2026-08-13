@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState, type ReactNode } from "react";
 
 import { BrandMark } from "@/components/site-header";
 import { SignOutButton } from "@/components/sign-out-button";
+import { formatTerm } from "@/lib/format";
 import { button, input as inputClass } from "@/lib/ui";
 
 type State =
@@ -173,7 +174,7 @@ function DoneView({ imported, term }: { imported: number; term: string }) {
       <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">Schedule imported</h1>
       <p className="mt-2 text-[15px] leading-7 text-zinc-600">
         Imported {imported} lab/tutorial {imported === 1 ? "section" : "sections"}
-        {term ? ` for ${term}` : ""}. Re-importing this term replaces them.
+        {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this term replaces them.
       </p>
 
       <div className="mx-auto mt-8 grid max-w-xs gap-3">
