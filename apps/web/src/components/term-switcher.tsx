@@ -1,13 +1,15 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { formatTerm } from "@/lib/format";
 
+const ONE_HUNDRED_EIGHTY_DAYS = 60 * 60 * 24 * 180;
+
 /**
- * Semester picker for the nav. Sets `?term=<term>` on the current page, which the
- * server pages read to scope everything (sections, discovery, requests, matches)
- * to that term. Renders nothing when the user has 0-1 terms — no point switching.
+ * Semester picker for the nav. Remembers the pick in the `partnerup_term` cookie
+ * (read by resolveActiveTerm) so the selection sticks across navigation instead
+ * of snapping back to the most-recent term. Renders nothing for 0-1 terms.
  */
 export function TermSwitcher({
   activeTerm,
@@ -17,10 +19,14 @@ export function TermSwitcher({
   terms: string[];
 }) {
   const router = useRouter();
-  const pathname = usePathname();
 
   if (terms.length <= 1) {
     return null;
+  }
+
+  function handleChange(term: string) {
+    document.cookie = `partnerup_term=${encodeURIComponent(term)}; path=/; max-age=${ONE_HUNDRED_EIGHTY_DAYS}; samesite=lax`;
+    router.refresh();
   }
 
   return (
@@ -30,9 +36,7 @@ export function TermSwitcher({
       </span>
       <select
         className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 focus:border-brand focus:outline-none"
-        onChange={(event) =>
-          router.push(`${pathname}?term=${encodeURIComponent(event.target.value)}`)
-        }
+        onChange={(event) => handleChange(event.target.value)}
         value={activeTerm ?? ""}
       >
         {terms.map((term) => (

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cookies } from "next/headers";
+
 import type {
   ComponentType,
   DayOfWeek,
@@ -222,16 +224,29 @@ export async function listTermsForUser(userId: string): Promise<string[]> {
 }
 
 /**
- * Resolves which term the app should show: the requested one if the user has it,
- * otherwise their most-recent term (or null if they have none). Used by pages to
- * scope their queries and to drive the nav term switcher.
+ * Resolves which term the app should show. Priority: an explicit ?term= request,
+ * then the user's last picked term (remembered in the `partnerup_term` cookie so
+ * the selection sticks across navigation), then their most-recent term. Returns
+ * null only if they have no terms. Used by pages to scope queries + drive the nav
+ * term switcher.
  */
 export async function resolveActiveTerm(
   userId: string,
   requested?: string,
 ): Promise<{ terms: string[]; activeTerm: string | null }> {
   const terms = await listTermsForUser(userId);
-  const activeTerm = requested && terms.includes(requested) ? requested : (terms[0] ?? null);
+
+  const rawCookie = (await cookies()).get("partnerup_term")?.value;
+  const remembered = rawCookie ? decodeURIComponent(rawCookie) : undefined;
+
+  let activeTerm: string | null = null;
+  if (requested && terms.includes(requested)) {
+    activeTerm = requested;
+  } else if (remembered && terms.includes(remembered)) {
+    activeTerm = remembered;
+  } else {
+    activeTerm = terms[0] ?? null;
+  }
 
   return { activeTerm, terms };
 }
