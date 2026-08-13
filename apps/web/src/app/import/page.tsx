@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { requirePageUser } from "@/server/auth";
 import { countSectionsForUser } from "@/server/lab-partner";
-import { ImportFromMosaic } from "./import-from-mosaic";
+import { ImportMethods } from "./import-methods";
 
 export const metadata: Metadata = {
   title: "Import from Mosaic | PartnerUp",
@@ -13,5 +13,5 @@ export default async function ImportPage() {
   const user = await requirePageUser();
   const existingSectionsCount = await countSectionsForUser(user.id);
 
-  return <ImportFromMosaic existingSectionsCount={existingSectionsCount} />;
+  return <ImportMethods existingSectionsCount={existingSectionsCount} />;
 }

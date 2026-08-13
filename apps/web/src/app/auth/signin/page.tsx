@@ -47,7 +47,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </p>
           ) : null}
 
-          <SignInForm callbackUrl={callbackUrl} oauthError={resolvedSearchParams?.error} />
+          <SignInForm callbackUrl={callbackUrl} />
 
           <p className="mt-6 border-t border-zinc-200 pt-4 text-sm leading-6 text-zinc-600">
             New here?{" "}
