@@ -13,7 +13,7 @@ import {
 } from "@/lib/format";
 import { avatarColorClass, badge, button } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
-import { getPartnerRequestsForUser } from "@/server/lab-partner";
+import { getPartnerRequestsForUser, resolveActiveTerm } from "@/server/lab-partner";
 
 import { updatePartnerRequestStatus, withdrawSentRequest } from "./actions";
 
@@ -27,6 +27,7 @@ type RequestsPageProps = {
   searchParams?: Promise<{
     notice?: string;
     tab?: string;
+    term?: string;
   }>;
 };
 
@@ -35,8 +36,9 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
   const resolvedSearchParams = await searchParams;
   const notice = resolvedSearchParams?.notice;
   const tab = resolvedSearchParams?.tab === "sent" ? "sent" : "received";
+  const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
 
-  const partnerRequests = await getPartnerRequestsForUser(user.id);
+  const partnerRequests = await getPartnerRequestsForUser(user.id, activeTerm ?? undefined);
   const incomingRequests = partnerRequests.filter((request) => request.receiverId === user.id);
   const outgoingRequests = partnerRequests.filter((request) => request.senderId === user.id);
   const pendingIncomingCount = incomingRequests.filter(
@@ -44,7 +46,7 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
   ).length;
 
   return (
-    <AppShell active="requests" pageTitle="Requests" user={user}>
+    <AppShell active="requests" activeTerm={activeTerm} pageTitle="Requests" terms={terms} user={user}>
       <h1 className="font-display text-2xl font-bold text-zinc-950">Requests</h1>
       <p className="mt-1 text-[15px] text-zinc-500">
         Manage partner requests you&apos;ve sent and received.

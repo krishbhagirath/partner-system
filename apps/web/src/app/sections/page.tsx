@@ -7,7 +7,7 @@ import { PendingButton } from "@/components/pending-button";
 import { formatDate, formatDay, formatStatus, formatUserDisplayName, getInitials, toClockTime } from "@/lib/format";
 import { avatarColorClass, badge, button, statCard, textarea } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
-import { listSectionDiscoveryForUser } from "@/server/lab-partner";
+import { listSectionDiscoveryForUser, resolveActiveTerm } from "@/server/lab-partner";
 
 import { sendPartnerRequest } from "./actions";
 
@@ -27,6 +27,7 @@ type SectionsPageProps = {
   searchParams?: Promise<{
     course?: string;
     notice?: string;
+    term?: string;
   }>;
 };
 
@@ -35,7 +36,8 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
   const resolvedSearchParams = await searchParams;
   const notice = resolvedSearchParams?.notice;
   const activeCourse = resolvedSearchParams?.course;
-  const discoverySections = await listSectionDiscoveryForUser(user.id);
+  const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
+  const discoverySections = await listSectionDiscoveryForUser(user.id, activeTerm ?? undefined);
   const groupedSections = groupDiscoverySections(discoverySections);
   const courseOptions = [...new Set(discoverySections.map((entry) => entry.section.courseCode))].sort();
   const visibleGroups = activeCourse
@@ -54,7 +56,7 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
   ).length;
 
   return (
-    <AppShell active="discovery" pageTitle="Find partners" user={user}>
+    <AppShell active="discovery" activeTerm={activeTerm} pageTitle="Find partners" terms={terms} user={user}>
       <h1 className="font-display text-2xl font-bold text-zinc-950">Find partners</h1>
       <p className="mt-1 text-[15px] text-zinc-500">
         Browse classmates who are actively looking for partners in your imported labs and

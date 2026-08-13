@@ -10,21 +10,28 @@ import {
   listMatchesForUser,
   listSectionDiscoveryForUser,
   listSectionsWithDiscoverabilityForUser,
+  resolveActiveTerm,
 } from "@/server/lab-partner";
 
 export const metadata: Metadata = {
   title: "Dashboard | PartnerUp",
 };
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<{ term?: string }>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const user = await requirePageUser();
+  const resolvedSearchParams = await searchParams;
+  const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
 
   const [sectionsWithDiscoverability, discoverySections, pendingRequestsCount, matches] =
     await Promise.all([
-      listSectionsWithDiscoverabilityForUser(user.id),
-      listSectionDiscoveryForUser(user.id),
+      listSectionsWithDiscoverabilityForUser(user.id, activeTerm ?? undefined),
+      listSectionDiscoveryForUser(user.id, activeTerm ?? undefined),
       countPendingIncomingRequests(user.id),
-      listMatchesForUser(user.id),
+      listMatchesForUser(user.id, activeTerm ?? undefined),
     ]);
 
   const discoveryBySectionId = new Map(
@@ -80,7 +87,7 @@ export default async function DashboardPage() {
   const firstName = displayName.split(" ")[0];
 
   return (
-    <AppShell active="dashboard" pageTitle="Dashboard" user={user}>
+    <AppShell active="dashboard" activeTerm={activeTerm} pageTitle="Dashboard" terms={terms} user={user}>
       <h1 className="font-display text-2xl font-bold text-zinc-950">Welcome back, {firstName}</h1>
       <p className="mt-1 text-[15px] text-zinc-500">
         Here&apos;s what&apos;s happening across your sections.

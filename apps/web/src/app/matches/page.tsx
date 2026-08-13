@@ -4,18 +4,24 @@ import { AppShell } from "@/components/app-shell";
 import { formatDate, formatSectionLabel, formatUserDisplayName, getInitials } from "@/lib/format";
 import { avatarColorClass, badge } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
-import { listMatchesForUser } from "@/server/lab-partner";
+import { listMatchesForUser, resolveActiveTerm } from "@/server/lab-partner";
 
 export const metadata: Metadata = {
   title: "Matches | PartnerUp",
 };
 
-export default async function MatchesPage() {
+type MatchesPageProps = {
+  searchParams?: Promise<{ term?: string }>;
+};
+
+export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   const user = await requirePageUser();
-  const matches = await listMatchesForUser(user.id);
+  const resolvedSearchParams = await searchParams;
+  const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
+  const matches = await listMatchesForUser(user.id, activeTerm ?? undefined);
 
   return (
-    <AppShell active="matches" pageTitle="Matches" user={user}>
+    <AppShell active="matches" activeTerm={activeTerm} pageTitle="Matches" terms={terms} user={user}>
       <h1 className="font-display text-2xl font-bold text-zinc-950">Matches</h1>
       <p className="mt-1 text-[15px] text-zinc-500">Confirmed lab and tutorial partners.</p>
 

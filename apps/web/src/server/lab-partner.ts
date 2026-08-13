@@ -192,7 +192,7 @@ export function countSectionsForUser(userId: string) {
   });
 }
 
-export function listSectionsForUser(userId: string) {
+export function listSectionsForUser(userId: string, term?: string) {
   return db.section.findMany({
     orderBy: [
       { term: "asc" },
@@ -204,11 +204,39 @@ export function listSectionsForUser(userId: string) {
     ],
     where: {
       userId,
+      ...(term ? { term } : {}),
     },
   });
 }
 
-export function listSectionsWithDiscoverabilityForUser(userId: string) {
+/** Distinct terms a user has imported, most-recent first (string order). */
+export async function listTermsForUser(userId: string): Promise<string[]> {
+  const rows = await db.section.findMany({
+    distinct: ["term"],
+    orderBy: { term: "desc" },
+    select: { term: true },
+    where: { userId },
+  });
+
+  return rows.map((row) => row.term);
+}
+
+/**
+ * Resolves which term the app should show: the requested one if the user has it,
+ * otherwise their most-recent term (or null if they have none). Used by pages to
+ * scope their queries and to drive the nav term switcher.
+ */
+export async function resolveActiveTerm(
+  userId: string,
+  requested?: string,
+): Promise<{ terms: string[]; activeTerm: string | null }> {
+  const terms = await listTermsForUser(userId);
+  const activeTerm = requested && terms.includes(requested) ? requested : (terms[0] ?? null);
+
+  return { activeTerm, terms };
+}
+
+export function listSectionsWithDiscoverabilityForUser(userId: string, term?: string) {
   return db.section.findMany({
     include: {
       discoverableSections: {
@@ -228,6 +256,7 @@ export function listSectionsWithDiscoverabilityForUser(userId: string) {
     ],
     where: {
       userId,
+      ...(term ? { term } : {}),
     },
   });
 }
@@ -254,8 +283,8 @@ export async function removeImportedSection(userId: string, sectionId: string) {
   });
 }
 
-export async function listSectionDiscoveryForUser(userId: string) {
-  const sections = await listSectionsForUser(userId);
+export async function listSectionDiscoveryForUser(userId: string, term?: string) {
+  const sections = await listSectionsForUser(userId, term);
 
   if (sections.length === 0) {
     return [];
@@ -961,7 +990,10 @@ export type MatchWithSection = {
   };
 };
 
-export async function listMatchesForUser(userId: string): Promise<MatchWithSection[]> {
+export async function listMatchesForUser(
+  userId: string,
+  term?: string,
+): Promise<MatchWithSection[]> {
   const acceptedRequests = await db.partnerRequest.findMany({
     include: {
       receiver: {
@@ -978,6 +1010,7 @@ export async function listMatchesForUser(userId: string): Promise<MatchWithSecti
     where: {
       OR: [{ senderId: userId }, { receiverId: userId }],
       status: "ACCEPTED",
+      ...(term ? { section: { term } } : {}),
     },
   });
 
@@ -999,7 +1032,7 @@ export function countPendingIncomingRequests(userId: string) {
   });
 }
 
-export function getPartnerRequestsForUser(userId: string) {
+export function getPartnerRequestsForUser(userId: string, term?: string) {
   return db.partnerRequest.findMany({
     include: {
       receiver: {
@@ -1015,6 +1048,7 @@ export function getPartnerRequestsForUser(userId: string) {
     },
     where: {
       OR: [{ senderId: userId }, { receiverId: userId }],
+      ...(term ? { section: { term } } : {}),
     },
   });
 }

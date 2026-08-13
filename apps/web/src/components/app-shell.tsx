@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { NotificationsBell } from "@/components/notifications-bell";
 import { SignOutButton } from "@/components/sign-out-button";
+import { TermSwitcher } from "@/components/term-switcher";
 import { formatRelativeTime, formatUserDisplayName, getInitials } from "@/lib/format";
 import { button } from "@/lib/ui";
 import { countPendingIncomingRequests, getRecentNotificationsForUser } from "@/server/lab-partner";
@@ -27,13 +28,17 @@ type AppShellUser = {
 
 export async function AppShell({
   active,
+  activeTerm = null,
   children,
   pageTitle,
+  terms = [],
   user,
 }: {
   active: AppView;
+  activeTerm?: string | null;
   children: React.ReactNode;
   pageTitle: string;
+  terms?: string[];
   user: AppShellUser;
 }) {
   const [pendingCount, notifications] = await Promise.all([
@@ -62,6 +67,8 @@ export async function AppShell({
           <span className="text-brand">Partner</span>
           <span className="text-gold">Up</span>
         </Link>
+
+        <TermSwitcher activeTerm={activeTerm} terms={terms} />
 
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => (
