@@ -130,7 +130,9 @@ function parseCourseXml(xml: string, selectedKey: string, courseCode: string, ou
     }
 
     const sectionCode = (block.secNo || block.disp || "").trim().toUpperCase();
-    const location = (block.location || "").trim() || "TBA";
+    // VSB's guest/shared data never includes rooms, so this is empty for share-link
+    // imports. Empty (rather than "TBA") lets the UI omit the location entirely.
+    const location = (block.location || "").trim();
     const ids = (block.timeblockids || "").split(",").filter(Boolean);
     const seen = new Set<string>();
 

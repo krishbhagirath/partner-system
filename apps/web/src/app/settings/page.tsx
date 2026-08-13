@@ -234,7 +234,9 @@ function DiscoverabilitySectionForm({
             {matchedPartner ? "Matched" : isDiscoverable ? "Discoverable" : "Private"}
           </span>
         </div>
-        <p className="mt-2 text-sm text-zinc-500">{section.location || "Location TBA"}</p>
+        {section.location ? (
+          <p className="mt-2 text-sm text-zinc-500">{section.location}</p>
+        ) : null}
       </div>
 
       {matchedPartner ? (

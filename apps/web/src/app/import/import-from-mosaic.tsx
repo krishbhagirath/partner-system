@@ -662,8 +662,8 @@ function ReviewStep({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-zinc-950">{formatSectionLabel(section)}</p>
                   <p className="mt-0.5 text-xs text-zinc-400">
-                    {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime} ·{" "}
-                    {section.location || "Location TBA"}
+                    {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime}
+                    {section.location ? ` · ${section.location}` : ""}
                   </p>
                 </div>
                 <span className="shrink-0 rounded bg-zinc-100 px-2 py-1 text-[11px] font-bold text-zinc-600">
@@ -749,8 +749,8 @@ function ChoosePartnersStep({
                     {formatSectionLabel(section)}
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-400">
-                    {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime} ·{" "}
-                    {section.location || "Location TBA"}
+                    {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime}
+                    {section.location ? ` · ${section.location}` : ""}
                   </p>
                   {hasHint ? (
                     <p className="mt-1 text-xs font-semibold text-brand">

@@ -176,7 +176,8 @@ function DiscoverySectionBlock({ discoverySection }: { discoverySection: Discove
         )}
         <span className="text-sm text-zinc-500">
           {formatDay(section.dayOfWeek)} {toClockTime(section.startTime)}–
-          {toClockTime(section.endTime)} · {section.location || "Location TBA"}
+          {toClockTime(section.endTime)}
+          {section.location ? ` · ${section.location}` : ""}
         </span>
       </div>
 

@@ -155,7 +155,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-400">
                       {formatDay(section.dayOfWeek)} {toClockTime(section.startTime)}–
-                      {toClockTime(section.endTime)} · {section.location || "Location TBA"}
+                      {toClockTime(section.endTime)}
+                      {section.location ? ` · ${section.location}` : ""}
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-brand-tint px-2.5 py-1 text-xs font-bold text-brand">
