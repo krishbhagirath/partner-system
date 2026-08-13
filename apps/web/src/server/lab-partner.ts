@@ -164,6 +164,26 @@ export function createSectionsForUser(userId: string, sections: SectionCreateInp
   });
 }
 
+/**
+ * Re-importing a semester is a clean replace: delete this user's sections for
+ * that term (which cascades their discoverability + partner requests for those
+ * sections) and insert the fresh set, atomically. Other semesters are untouched.
+ */
+export function replaceSectionsForTerm(
+  userId: string,
+  term: string,
+  sections: SectionCreateInput[],
+) {
+  return db.$transaction(async (tx) => {
+    await tx.section.deleteMany({ where: { term, userId } });
+
+    return tx.section.createMany({
+      data: sections.map((section) => ({ ...section, userId })),
+      skipDuplicates: true,
+    });
+  });
+}
+
 export function countSectionsForUser(userId: string) {
   return db.section.count({
     where: {

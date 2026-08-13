@@ -10,7 +10,7 @@ import { button, input as inputClass } from "@/lib/ui";
 type State =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "done"; imported: number; found: number; term: string }
+  | { status: "done"; imported: number; term: string }
   | { status: "error"; message: string };
 
 export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) {
@@ -34,7 +34,7 @@ export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) 
       });
 
       const payload = (await response.json().catch(() => null)) as
-        | { imported: number; found: number; term: string }
+        | { imported: number; term: string }
         | { error: string }
         | null;
 
@@ -51,7 +51,6 @@ export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) 
       setState({
         status: "done",
         imported: payload.imported,
-        found: payload.found,
         term: payload.term,
       });
     } catch {
@@ -69,7 +68,7 @@ export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) 
 
         <div className="flex-1">
           {state.status === "done" ? (
-            <DoneView imported={state.imported} found={state.found} term={state.term} />
+            <DoneView imported={state.imported} term={state.term} />
           ) : (
             <>
               <h1 className="font-display text-3xl font-bold text-zinc-950">Import your schedule</h1>
@@ -93,7 +92,8 @@ export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) 
                 </Step>
                 <Step n={2}>Open (or build) the schedule with your enrolled courses.</Step>
                 <Step n={3}>
-                  Click <strong>Share</strong> near the top and copy the short link it gives you.
+                  Scroll down and click <strong>Share</strong> (near the bottom of the page), then
+                  copy the short link it gives you.
                 </Step>
                 <Step n={4}>Paste it below and hit Import.</Step>
               </ol>
@@ -164,7 +164,7 @@ function LoadingBar() {
   );
 }
 
-function DoneView({ imported, found, term }: { imported: number; found: number; term: string }) {
+function DoneView({ imported, term }: { imported: number; term: string }) {
   return (
     <div className="pt-8 text-center">
       <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand/10 text-2xl">
@@ -172,11 +172,8 @@ function DoneView({ imported, found, term }: { imported: number; found: number; 
       </div>
       <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">Schedule imported</h1>
       <p className="mt-2 text-[15px] leading-7 text-zinc-600">
-        {imported > 0
-          ? `Added ${imported} lab/tutorial ${imported === 1 ? "section" : "sections"}${
-              term ? ` for ${term}` : ""
-            }.`
-          : `Those ${found} ${found === 1 ? "section is" : "sections are"} already in your account.`}
+        Imported {imported} lab/tutorial {imported === 1 ? "section" : "sections"}
+        {term ? ` for ${term}` : ""}. Re-importing this term replaces them.
       </p>
 
       <div className="mx-auto mt-8 grid max-w-xs gap-3">

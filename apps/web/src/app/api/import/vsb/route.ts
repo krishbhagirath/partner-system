@@ -8,7 +8,7 @@ import {
 } from "@/lib/rate-limit";
 import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { AuthenticationError, requireUser } from "@/server/auth";
-import { createSectionsForUser } from "@/server/lab-partner";
+import { replaceSectionsForTerm } from "@/server/lab-partner";
 import { VsbImportError, parseVsbShareLink } from "@/server/vsb-import";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +50,8 @@ export async function POST(request: Request) {
 
   try {
     const { term, sections } = await parseVsbShareLink(parsed.data.link);
-    const result = await createSectionsForUser(user.id, sections);
+    // Re-import replaces this term's sections (wipe + rewrite), never duplicates.
+    const result = await replaceSectionsForTerm(user.id, term, sections);
 
     return NextResponse.json(
       { imported: result.count, found: sections.length, term },
