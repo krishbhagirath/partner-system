@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
 
 import { BrandMark } from "@/components/site-header";
@@ -14,9 +15,22 @@ type State =
   | { status: "done"; imported: number; term: string }
   | { status: "error"; message: string };
 
-export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) {
+export function ImportFromShareLink({
+  importedTerms,
+  onUseMacId,
+}: {
+  importedTerms: string[];
+  onUseMacId: () => void;
+}) {
+  const router = useRouter();
   const [link, setLink] = useState("");
   const [state, setState] = useState<State>({ status: "idle" });
+
+  function importAnother() {
+    setLink("");
+    setState({ status: "idle" });
+    router.refresh();
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,14 +83,32 @@ export function ImportFromShareLink({ onUseMacId }: { onUseMacId: () => void }) 
 
         <div className="flex-1">
           {state.status === "done" ? (
-            <DoneView imported={state.imported} term={state.term} />
+            <DoneView imported={state.imported} onImportAnother={importAnother} term={state.term} />
           ) : (
             <>
               <h1 className="font-display text-3xl font-bold text-zinc-950">Import your schedule</h1>
               <p className="mt-3 text-[15px] leading-7 text-zinc-600">
                 Paste your McMaster MyTimetable share link and we&apos;ll pull in your lab and
-                tutorial sections. No MacID password needed.
+                tutorial sections — we detect which semester it&apos;s for automatically. No MacID
+                password needed. Import Fall and Winter separately (one link each).
               </p>
+
+              {importedTerms.length > 0 ? (
+                <p className="mt-4 text-sm text-zinc-600">
+                  Imported so far:{" "}
+                  {importedTerms.map((term) => (
+                    <span
+                      className="mr-1.5 inline-block rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand"
+                      key={term}
+                    >
+                      {formatTerm(term)}
+                    </span>
+                  ))}
+                  <span className="text-zinc-500">
+                    — paste another link to add or re-import a semester.
+                  </span>
+                </p>
+              ) : null}
 
               <ol className="mt-6 grid gap-3 text-[15px] leading-6 text-zinc-700">
                 <Step n={1}>
@@ -165,22 +197,35 @@ function LoadingBar() {
   );
 }
 
-function DoneView({ imported, term }: { imported: number; term: string }) {
+function DoneView({
+  imported,
+  onImportAnother,
+  term,
+}: {
+  imported: number;
+  onImportAnother: () => void;
+  term: string;
+}) {
   return (
     <div className="pt-8 text-center">
       <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand/10 text-2xl">
         ✅
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">Schedule imported</h1>
+      <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">
+        {term ? `${formatTerm(term)} imported` : "Schedule imported"}
+      </h1>
       <p className="mt-2 text-[15px] leading-7 text-zinc-600">
         Imported {imported} lab/tutorial {imported === 1 ? "section" : "sections"}
-        {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this term replaces them.
+        {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this semester replaces them.
       </p>
 
       <div className="mx-auto mt-8 grid max-w-xs gap-3">
         <Link className={`${button.primary} h-12 w-full`} href="/dashboard">
           Go to dashboard
         </Link>
+        <button className={`${button.secondary} h-12 w-full`} onClick={onImportAnother} type="button">
+          Import another semester
+        </button>
         <Link className="text-sm font-semibold text-zinc-500 hover:text-brand" href="/sections">
           Review my sections
         </Link>

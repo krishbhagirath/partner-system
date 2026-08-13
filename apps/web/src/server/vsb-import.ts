@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ComponentType, DayOfWeek } from "@/generated/prisma/client";
+import { formatTerm } from "@/lib/format";
 import type { SectionCreateInput } from "@/server/lab-partner";
 
 const HOST = "mytimetable.mcmaster.ca";
@@ -237,7 +238,9 @@ export async function parseVsbShareLink(rawLink: string): Promise<VsbImportResul
     );
   }
 
-  const sectionTerm = termLabel || term;
+  // Canonicalize to season-first ("Fall 2026") so VSB and MacID imports store the
+  // same term string and therefore match each other.
+  const sectionTerm = formatTerm(termLabel || term);
 
   return {
     term: sectionTerm,

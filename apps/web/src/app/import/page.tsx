@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 
 import { requirePageUser } from "@/server/auth";
-import { countSectionsForUser } from "@/server/lab-partner";
+import { countSectionsForUser, listTermsForUser } from "@/server/lab-partner";
 import { ImportMethods } from "./import-methods";
 
 export const metadata: Metadata = {
-  title: "Import from Mosaic | PartnerUp",
-  description: "Import McMaster lab and tutorial sections from Mosaic into PartnerUp.",
+  title: "Import your schedule | PartnerUp",
+  description: "Import McMaster lab and tutorial sections into PartnerUp.",
 };
 
 export default async function ImportPage() {
   const user = await requirePageUser();
-  const existingSectionsCount = await countSectionsForUser(user.id);
+  const [existingSectionsCount, importedTerms] = await Promise.all([
+    countSectionsForUser(user.id),
+    listTermsForUser(user.id),
+  ]);
 
-  return <ImportMethods existingSectionsCount={existingSectionsCount} />;
+  return (
+    <ImportMethods existingSectionsCount={existingSectionsCount} importedTerms={importedTerms} />
+  );
 }
