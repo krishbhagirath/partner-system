@@ -131,11 +131,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         <h2 className="font-display text-[15px] font-bold text-zinc-950">Notifications</h2>
         <form action={updateNotificationPreferencesAction} className="mt-4 grid gap-3">
           <ToggleRow
-            defaultChecked={profile?.notifyOnRequest ?? true}
-            label="Email me about new requests"
-            name="notifyOnRequest"
-          />
-          <ToggleRow
             defaultChecked={profile?.notifyOnMatch ?? true}
             label="Notify me when a match is confirmed"
             name="notifyOnMatch"

@@ -63,7 +63,7 @@ export async function AppShell({
   return (
     <div className="flex min-h-screen bg-stone-50 text-zinc-950">
       <aside className="hidden w-[250px] shrink-0 flex-col border-r border-zinc-200 bg-white px-3.5 py-5 lg:flex">
-        <Link className="mb-6 flex items-center gap-2 px-2 font-display text-lg font-bold" href="/">
+        <Link className="mb-6 flex items-center px-2 font-display text-lg font-bold" href="/">
           <span className="text-brand">Partner</span>
           <span className="text-gold">Up</span>
         </Link>

@@ -11,10 +11,9 @@ import type {
 } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatSectionLabel } from "@/lib/format";
-import {
-  notifyIncomingPartnerRequest,
-  notifyPartnerMatched,
-} from "@/server/partner-notifications";
+// Request emails are intentionally not sent (notifyIncomingPartnerRequest stays in
+// partner-notifications.ts to re-enable later). Match emails still fire.
+import { notifyPartnerMatched } from "@/server/partner-notifications";
 
 export type SectionCreateInput = {
   importJobId?: string | null;
@@ -785,8 +784,8 @@ export async function createPartnerRequest(
         },
       });
 
-  // Best-effort email nudge to the receiver; never blocks/breaks the request.
-  await notifyIncomingPartnerRequest(request.id);
+  // Request emails disabled (deliverability to McMaster inboxes is unreliable and
+  // the setting was removed). The in-app notification bell still shows the request.
 
   return request;
 }
