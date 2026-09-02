@@ -40,6 +40,14 @@ export async function sendVerificationEmail(to: string, verifyUrl: string) {
   });
 }
 
+export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  await sendEmail({
+    to,
+    subject: "Reset your PartnerUp password",
+    html: passwordResetHtml(resetUrl),
+  });
+}
+
 export async function sendIncomingRequestEmail(input: {
   to: string;
   senderName: string;
@@ -103,6 +111,21 @@ function verificationEmailHtml(verifyUrl: string) {
       ${button(verifyUrl, "Verify email")}
       <p style="color: ${MUTED}; font-size: 13px;">
         If you didn't create a PartnerUp account, you can safely ignore this email.
+      </p>
+    </div>
+  `;
+}
+
+function passwordResetHtml(resetUrl: string) {
+  return `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h1 style="color: ${BRAND}; font-size: 20px;">Reset your password</h1>
+      <p style="color: ${TEXT}; font-size: 15px; line-height: 1.6;">
+        Click the button below to set a new PartnerUp password. This link expires in 1 hour.
+      </p>
+      ${button(resetUrl, "Reset password")}
+      <p style="color: ${MUTED}; font-size: 13px;">
+        If you didn't request this, you can safely ignore this email — your password won't change.
       </p>
     </div>
   `;

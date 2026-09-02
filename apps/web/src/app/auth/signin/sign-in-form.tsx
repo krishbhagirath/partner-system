@@ -84,6 +84,15 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
         />
       </label>
 
+      <div className="-mt-2 flex justify-end">
+        <Link
+          className="text-xs font-semibold text-zinc-500 hover:text-brand"
+          href="/auth/forgot-password"
+        >
+          Forgot password?
+        </Link>
+      </div>
+
       {error ? (
         <p className={alertError} role="alert">
           {error}{" "}
