@@ -20,7 +20,7 @@ export function ImportFromShareLink({
   onUseMacId,
 }: {
   importedTerms: string[];
-  onUseMacId: () => void;
+  onUseMacId?: () => void;
 }) {
   const router = useRouter();
   const [link, setLink] = useState("");
@@ -159,13 +159,15 @@ export function ImportFromShareLink({
                 </button>
               </form>
 
-              <button
-                className="mt-6 text-sm font-semibold text-zinc-400 hover:text-brand"
-                onClick={onUseMacId}
-                type="button"
-              >
-                Prefer to log in with your MacID instead? →
-              </button>
+              {onUseMacId ? (
+                <button
+                  className="mt-6 text-sm font-semibold text-zinc-400 hover:text-brand"
+                  onClick={onUseMacId}
+                  type="button"
+                >
+                  Prefer to log in with your MacID instead? →
+                </button>
+              ) : null}
             </>
           )}
         </div>
