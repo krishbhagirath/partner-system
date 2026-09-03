@@ -13,16 +13,23 @@ export function SignUpForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactInstagram, setContactInstagram] = useState("");
+  const [contactOther, setContactOther] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordsMatch = password === confirmPassword;
+  const hasContact = Boolean(
+    contactPhone.trim() || contactInstagram.trim() || contactOther.trim(),
+  );
 
   const canSubmit =
     displayName.trim().length >= 2 &&
     email.trim().length > 0 &&
     password.length >= 10 &&
     passwordsMatch &&
+    hasContact &&
     !isSubmitting;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -39,6 +46,11 @@ export function SignUpForm() {
       return;
     }
 
+    if (!hasContact) {
+      setError("Add at least one contact method so partners can reach you.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -47,6 +59,9 @@ export function SignUpForm() {
           displayName: displayName.trim(),
           email: email.trim(),
           password,
+          contactPhone: contactPhone.trim() || undefined,
+          contactInstagram: contactInstagram.trim() || undefined,
+          contactOther: contactOther.trim() || undefined,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -168,6 +183,41 @@ export function SignUpForm() {
           <span className="text-xs font-medium text-red-600">Passwords do not match.</span>
         ) : null}
       </label>
+
+      <div className="grid gap-3 rounded-lg border border-zinc-200 bg-stone-50/50 p-3.5">
+        <div>
+          <p className="text-sm font-bold text-zinc-800">
+            Contact info <span className="font-semibold text-brand">(at least one)</span>
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Only shared with a classmate after you match, so they can reach you.
+          </p>
+        </div>
+        <input
+          autoComplete="tel"
+          className={inputClassName}
+          onChange={(event) => setContactPhone(event.target.value)}
+          placeholder="Phone number"
+          type="tel"
+          value={contactPhone}
+        />
+        <input
+          autoCapitalize="none"
+          className={inputClassName}
+          onChange={(event) => setContactInstagram(event.target.value)}
+          placeholder="Instagram handle"
+          spellCheck={false}
+          type="text"
+          value={contactInstagram}
+        />
+        <input
+          className={inputClassName}
+          onChange={(event) => setContactOther(event.target.value)}
+          placeholder="Other (Discord, email, etc.)"
+          type="text"
+          value={contactOther}
+        />
+      </div>
 
       {error ? (
         <p className={alertError} role="alert">

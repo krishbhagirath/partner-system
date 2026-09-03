@@ -19,9 +19,19 @@ export type RegisterUserInput = {
   displayName: string;
   email: string;
   password: string;
+  contactPhone?: string | undefined;
+  contactInstagram?: string | undefined;
+  contactOther?: string | undefined;
 };
 
-export async function registerUser({ displayName, email, password }: RegisterUserInput) {
+export async function registerUser({
+  displayName,
+  email,
+  password,
+  contactPhone,
+  contactInstagram,
+  contactOther,
+}: RegisterUserInput) {
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedDisplayName = displayName.trim();
   const passwordHash = await bcrypt.hash(password, 12);
@@ -33,6 +43,9 @@ export async function registerUser({ displayName, email, password }: RegisterUse
         email: normalizedEmail,
         name: normalizedDisplayName,
         passwordHash,
+        contactPhone: contactPhone?.trim() || null,
+        contactInstagram: contactInstagram?.trim() || null,
+        contactOther: contactOther?.trim() || null,
         // When verification is disabled, mark verified on creation so the field
         // stays consistent and login isn't gated. When enabled, leave it null so
         // the email flow drives verification. See feature-flags.ts.

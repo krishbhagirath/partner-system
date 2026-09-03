@@ -32,8 +32,21 @@ const registerRequestSchema = z
       .string()
       .min(10, "Password must be at least 10 characters.")
       .max(100, "Password must be at most 100 characters."),
+    contactPhone: z.string().trim().max(30).optional(),
+    contactInstagram: z.string().trim().max(50).optional(),
+    contactOther: z.string().trim().max(200).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) =>
+      Boolean(
+        data.contactPhone?.trim() || data.contactInstagram?.trim() || data.contactOther?.trim(),
+      ),
+    {
+      message: "Add at least one contact method so partners can reach you.",
+      path: ["contactPhone"],
+    },
+  );
 
 export async function POST(request: Request) {
   const rateLimit = checkRateLimit(
