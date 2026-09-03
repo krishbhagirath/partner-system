@@ -6,22 +6,16 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { NoticeBanner } from "@/components/notice-banner";
 import { PendingButton } from "@/components/pending-button";
 import { SignOutButton } from "@/components/sign-out-button";
-import { formatDate, formatUserDisplayName } from "@/lib/format";
+import { formatUserDisplayName } from "@/lib/format";
 import { badge, button, textarea as textareaClass } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import {
-  buildCourseComponentKey,
   buildSectionDiscoveryKey,
-  getLatestSuccessfulImportJobForUser,
   getMatchedPartnersBySectionKeyForUser,
-  getPartnerNeedStatsForPairs,
-  getPartnerNeedVotesForUser,
   getUserProfile,
   listSectionsWithDiscoverabilityForUser,
   type MatchedPartner,
-  type PartnerNeedStats,
 } from "@/server/lab-partner";
-import type { PartnerNeedResponse } from "@/generated/prisma/client";
 
 import {
   deleteOwnAccount,
@@ -46,17 +40,11 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const user = await requirePageUser();
   const notice = (await searchParams)?.notice;
 
-  const [latestImportJob, sections, matchedPartnersBySectionKey, profile, partnerNeedVotes] =
-    await Promise.all([
-      getLatestSuccessfulImportJobForUser(user.id),
-      listSectionsWithDiscoverabilityForUser(user.id),
-      getMatchedPartnersBySectionKeyForUser(user.id),
-      getUserProfile(user.id),
-      getPartnerNeedVotesForUser(user.id),
-    ]);
-  const partnerNeedStats = await getPartnerNeedStatsForPairs(
-    sections.map((section) => ({ componentType: section.componentType, courseCode: section.courseCode })),
-  );
+  const [sections, matchedPartnersBySectionKey, profile] = await Promise.all([
+    listSectionsWithDiscoverabilityForUser(user.id),
+    getMatchedPartnersBySectionKeyForUser(user.id),
+    getUserProfile(user.id),
+  ]);
 
   const groupedSections = groupSectionsByCourse(sections);
 
@@ -67,23 +55,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <NoticeBanner clearHref="/settings" notice={notice} />
 
       <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
-        <h2 className="font-display text-[15px] font-bold text-zinc-950">Mosaic connection</h2>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-zinc-800">Timetable last synced</p>
-            <p className="mt-0.5 text-sm text-zinc-500">
-              {latestImportJob
-                ? `${formatDate(latestImportJob.finishedAt ?? latestImportJob.createdAt)} · ${latestImportJob._count.sections} sections found`
-                : "You haven't imported a timetable yet."}
-            </p>
-          </div>
-          <Link className={button.secondary} href="/import">
-            {latestImportJob ? "Re-import" : "Import from Mosaic"}
-          </Link>
-        </div>
-      </section>
-
-      <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6">
         <h2 className="font-display text-[15px] font-bold text-zinc-950">Your sections</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Choose which imported labs and tutorials are visible to classmates.
@@ -101,25 +72,15 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   {group.term} · {group.courseCode}
                 </p>
                 <div className="grid gap-2.5">
-                  {group.sections.map((section) => {
-                    const courseComponentKey = buildCourseComponentKey(
-                      section.courseCode,
-                      section.componentType,
-                    );
-
-                    return (
-                      <DiscoverabilitySectionForm
-                        existingVote={partnerNeedVotes.get(courseComponentKey) ?? null}
-                        key={section.id}
-                        matchedPartner={
-                          matchedPartnersBySectionKey.get(buildSectionDiscoveryKey(section)) ??
-                          null
-                        }
-                        section={section}
-                        stats={partnerNeedStats.get(courseComponentKey) ?? null}
-                      />
-                    );
-                  })}
+                  {group.sections.map((section) => (
+                    <DiscoverabilitySectionForm
+                      key={section.id}
+                      matchedPartner={
+                        matchedPartnersBySectionKey.get(buildSectionDiscoveryKey(section)) ?? null
+                      }
+                      section={section}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
@@ -142,6 +103,23 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             Save preferences
           </PendingButton>
         </form>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6">
+        <h2 className="font-display text-[15px] font-bold text-zinc-950">Schedule import</h2>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-zinc-800">Your imported sections</p>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              {sections.length > 0
+                ? `${sections.length} lab/tutorial section${sections.length === 1 ? "" : "s"} imported. Re-importing a semester replaces it.`
+                : "You haven't imported a schedule yet."}
+            </p>
+          </div>
+          <Link className={button.secondary} href="/import">
+            {sections.length > 0 ? "Re-import" : "Import schedule"}
+          </Link>
+        </div>
       </section>
 
       <section className="mt-4 rounded-2xl border border-red-200 bg-white p-6">
@@ -190,22 +168,12 @@ function ToggleRow({
   );
 }
 
-const partnerNeedOptions: Array<{ label: string; value: PartnerNeedResponse }> = [
-  { label: "Yes", value: "YES" },
-  { label: "No", value: "NO" },
-  { label: "Not sure", value: "UNSURE" },
-];
-
 function DiscoverabilitySectionForm({
-  existingVote,
   matchedPartner,
   section,
-  stats,
 }: {
-  existingVote: PartnerNeedResponse | null;
   matchedPartner: MatchedPartner | null;
   section: SettingsSection;
-  stats: PartnerNeedStats | null;
 }) {
   const discoverability = section.discoverableSections[0] ?? null;
   const isDiscoverable = Boolean(discoverability?.isActive);
@@ -275,35 +243,6 @@ function DiscoverabilitySectionForm({
               type="checkbox"
             />
           </label>
-
-          <div className="rounded border border-zinc-200 bg-white px-3 py-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-zinc-700">
-                Does this class need a partner?
-              </span>
-              <div className="flex gap-1.5">
-                {partnerNeedOptions.map((option) => (
-                  <label className="cursor-pointer" key={option.value}>
-                    <input
-                      className="peer sr-only"
-                      defaultChecked={existingVote === option.value}
-                      name="partnerNeedResponse"
-                      type="radio"
-                      value={option.value}
-                    />
-                    <span className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-semibold text-zinc-600 transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white">
-                      {option.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            {stats ? (
-              <p className="mt-1.5 text-xs font-semibold text-brand">
-                {stats.yesCount}/{stats.yesCount + stats.noCount} students say yes
-              </p>
-            ) : null}
-          </div>
 
           <textarea
             className={`${textareaClass} min-h-16 text-sm`}
