@@ -33,6 +33,17 @@ export async function updateProfileDetails(formData: FormData) {
     throw new Error("Unable to save profile. Check your inputs and try again.");
   }
 
+  // At least one contact method is required so matched partners can reach the user.
+  const hasContact = [
+    parsedForm.data.contactPhone,
+    parsedForm.data.contactInstagram,
+    parsedForm.data.contactOther,
+  ].some((value) => value?.trim());
+
+  if (!hasContact) {
+    redirect("/profile?notice=need-contact");
+  }
+
   const user = await requireUser();
 
   try {

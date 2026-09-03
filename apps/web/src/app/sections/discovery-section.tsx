@@ -125,8 +125,6 @@ function CandidateCard({
         </div>
       </div>
 
-      {match.note ? <p className="text-xs leading-5 text-zinc-600">{match.note}</p> : null}
-
       {match.request ? (
         <p className="inline-flex w-fit rounded border border-zinc-200 bg-stone-50 px-2.5 py-1 text-[11px] font-bold uppercase text-zinc-600">
           Request {formatStatus(match.request.status)}

@@ -7,7 +7,7 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { PendingButton } from "@/components/pending-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { formatUserDisplayName } from "@/lib/format";
-import { badge, button, textarea as textareaClass } from "@/lib/ui";
+import { badge, button } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import {
   buildSectionDiscoveryKey,
@@ -177,7 +177,6 @@ function DiscoverabilitySectionForm({
 }) {
   const discoverability = section.discoverableSections[0] ?? null;
   const isDiscoverable = Boolean(discoverability?.isActive);
-  const note = discoverability?.note ?? "";
 
   return (
     <article
@@ -244,14 +243,6 @@ function DiscoverabilitySectionForm({
             />
           </label>
 
-          <textarea
-            className={`${textareaClass} min-h-16 text-sm`}
-            defaultValue={note}
-            maxLength={180}
-            name="note"
-            placeholder="Preferred meeting times or contact preferences"
-            rows={2}
-          />
           <PendingButton className={`${button.primary} justify-self-start`} pendingLabel="Saving...">
             Save
           </PendingButton>

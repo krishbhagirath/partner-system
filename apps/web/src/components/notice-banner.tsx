@@ -9,6 +9,11 @@ const noticeCopy: Record<string, { message: string; tone: "success" | "warning" 
     message: "Discoverability settings saved.",
     tone: "success",
   },
+  "need-contact": {
+    message:
+      "Add at least one contact method (phone, Instagram, or other) so matched partners can reach you.",
+    tone: "warning",
+  },
   "notifications-saved": {
     message: "Notification preferences saved.",
     tone: "success",
