@@ -101,7 +101,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           <div className="mt-2 border-t border-zinc-100 pt-4">
             <p className="text-sm font-bold text-zinc-950">Contact info</p>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Only shown to classmates you&apos;ve confirmed as a partner — never in Find
+              Only shown to classmates you&apos;ve confirmed as a partner, never in Find
               partners or Requests.
             </p>
 

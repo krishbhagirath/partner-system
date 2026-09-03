@@ -89,7 +89,7 @@ export function ImportFromShareLink({
               <h1 className="font-display text-3xl font-bold text-zinc-950">Import your schedule</h1>
               <p className="mt-3 text-[15px] leading-7 text-zinc-600">
                 Paste your McMaster MyTimetable share link and we&apos;ll pull in your lab and
-                tutorial sections — we detect which semester it&apos;s for automatically. No MacID
+                tutorial sections. We detect which semester it&apos;s for automatically. No MacID
                 password needed. Import Fall and Winter separately (one link each).
               </p>
 
@@ -104,8 +104,8 @@ export function ImportFromShareLink({
                       {formatTerm(term)}
                     </span>
                   ))}
-                  <span className="text-zinc-500">
-                    — paste another link to add or re-import a semester.
+                  <span className="mt-1 block text-zinc-500">
+                    Paste another link to add or re-import a semester.
                   </span>
                 </p>
               ) : null}

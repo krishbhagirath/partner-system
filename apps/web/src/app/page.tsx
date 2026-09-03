@@ -7,15 +7,15 @@ import { button } from "@/lib/ui";
 import { countSectionsForUser } from "@/server/lab-partner";
 
 const previewSections = [
-  { candidates: "3 candidates", course: "COMPSCI 2C03 — Lab 03", time: "Tue 2:30–4:20 PM · ITB 137" },
-  { candidates: "1 match", course: "CHEM 2OA3 — Lab 02", time: "Wed 9:30 AM–12:20 PM · ABB 165" },
+  { candidates: "3 candidates", course: "COMPSCI 2C03 Lab 03", time: "Tue 2:30–4:20 PM · ITB 137" },
+  { candidates: "1 match", course: "CHEM 2OA3 Lab 02", time: "Wed 9:30 AM–12:20 PM · ABB 165" },
 ] as const;
 
 const previewPartners = [
   {
     colorClass: "bg-brand",
-    initials: "PN",
-    name: "Priya Nair",
+    initials: "JD",
+    name: "John Doe",
     program: "Level II · Computer Science",
   },
   {
@@ -31,7 +31,7 @@ const steps = [
     number: "1",
     title: "Import your schedule",
     description:
-      "Connect your Mosaic account once. We automatically pull your labs and tutorials — nothing else.",
+      "Paste your McMaster MyTimetable share link. We pull in your labs and tutorials, nothing else.",
   },
   {
     number: "2",
@@ -182,7 +182,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 className="mt-8 inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-bold text-brand transition-colors hover:bg-zinc-100"
                 href="/auth/signup"
               >
-                Get Started — It&apos;s Free
+                Get Started for Free
               </Link>
             </div>
           </section>
@@ -191,7 +191,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       <footer className="border-t border-zinc-200 py-8">
         <p className="mx-auto max-w-7xl px-6 text-center text-sm text-zinc-400 sm:px-8 lg:px-10">
-          Made by students, for students. Not an official McMaster University service.
+          Not affiliated with McMaster University.
         </p>
       </footer>
     </main>
@@ -203,7 +203,7 @@ function HeroCta({ hasSections, isSignedIn }: { hasSections: boolean; isSignedIn
     return (
       <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Link className={`${button.primary} px-6 py-3 text-base`} href="/auth/signup">
-          Get Started — It&apos;s Free
+          Get Started for Free
         </Link>
         <Link
           className="text-sm font-semibold text-zinc-600 transition-colors hover:text-[#7A003C]"

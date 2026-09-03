@@ -51,7 +51,7 @@ export function formatSectionLabel(section: {
   componentType: string;
   sectionCode: string;
 }) {
-  return `${section.courseCode} — ${formatComponentType(section.componentType)} ${section.sectionCode}`;
+  return `${section.courseCode} · ${formatComponentType(section.componentType)} ${section.sectionCode}`;
 }
 
 /** Display a stored term ("2026 Fall") as season-first ("Fall 2026"). */

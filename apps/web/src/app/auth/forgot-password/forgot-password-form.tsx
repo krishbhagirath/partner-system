@@ -40,7 +40,7 @@ export function ForgotPasswordForm() {
   if (status === "sent") {
     return (
       <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
-        If an account exists for that email, a reset link is on its way. Check your inbox — and your
+        If an account exists for that email, a reset link is on its way. Check your inbox and your
         junk / quarantine folder, since McMaster can filter mail from newer senders. The link expires
         in 1 hour.
       </div>

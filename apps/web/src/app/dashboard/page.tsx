@@ -69,7 +69,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       suggestedCandidates.push({
         id: match.user.id,
         initials: getInitials(formatUserDisplayName(match.user)),
-        matchedCourseLabel: `${discoverySection.section.courseCode} — ${discoverySection.section.sectionCode}`,
+        matchedCourseLabel: `${discoverySection.section.courseCode} · ${discoverySection.section.sectionCode}`,
         name: formatUserDisplayName(match.user),
       });
 
@@ -150,7 +150,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 >
                   <div>
                     <p className="text-sm font-bold text-zinc-950">
-                      {section.courseCode} — {section.componentType === "LAB" ? "Lab" : "Tutorial"}{" "}
+                      {section.courseCode} · {section.componentType === "LAB" ? "Lab" : "Tutorial"}{" "}
                       {section.sectionCode}
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-400">

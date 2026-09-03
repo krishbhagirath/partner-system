@@ -44,13 +44,13 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
           {resolvedSearchParams?.verified ? (
             <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
-              Email verified — you can now sign in.
+              Email verified. You can now sign in.
             </p>
           ) : null}
 
           {resolvedSearchParams?.reset ? (
             <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
-              Password reset — sign in with your new password.
+              Password reset. Sign in with your new password.
             </p>
           ) : null}
 

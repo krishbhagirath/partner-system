@@ -125,7 +125,7 @@ function passwordResetHtml(resetUrl: string) {
       </p>
       ${button(resetUrl, "Reset password")}
       <p style="color: ${MUTED}; font-size: 13px;">
-        If you didn't request this, you can safely ignore this email — your password won't change.
+        If you didn't request this, you can safely ignore this email. Your password won't change.
       </p>
     </div>
   `;
