@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Sora, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
@@ -29,7 +30,17 @@ export default function RootLayout({
 }>) {
   return (
     <html className={`${sora.variable} ${sourceSans.variable}`} lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {/*
+          Vercel Web Analytics: page views and visitors, no cookies and no
+          cross-site tracking, so it needs no consent banner. Sends nothing when
+          running outside a Vercel deployment, so local dev is unaffected.
+          Requires Web Analytics to be enabled for the project in the Vercel
+          dashboard — the script 404s until that switch is on.
+        */}
+        <Analytics />
+      </body>
     </html>
   );
 }
