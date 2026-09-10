@@ -19,15 +19,30 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
       return;
     }
 
-    function handleClickOutside(event: MouseEvent) {
+    function handlePointerOutside(event: Event) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    // touchstart as well as mousedown: iOS Safari does not reliably fire
+    // mousedown for taps on non-interactive elements, so a mousedown-only
+    // listener leaves the panel stuck open on iPhones.
+    document.addEventListener("mousedown", handlePointerOutside);
+    document.addEventListener("touchstart", handlePointerOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerOutside);
+      document.removeEventListener("touchstart", handlePointerOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   return (
@@ -54,46 +69,71 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
           />
         </svg>
         {hasUnread ? (
-          <span
-            aria-hidden
-            className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-brand"
-          />
+          <span aria-hidden className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-brand" />
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-11 z-20 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
-          <div className="border-b border-zinc-100 px-4 py-3 text-sm font-bold text-zinc-950">
-            Notifications
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-zinc-500">
-                You&apos;re all caught up.
-              </p>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  className="flex gap-3 border-b border-zinc-50 px-4 py-3 last:border-b-0"
-                  key={notification.id}
-                >
-                  <span
-                    aria-hidden
-                    className={`mt-1.5 size-2 shrink-0 rounded-full ${
-                      notification.unread ? "bg-brand" : "bg-zinc-200"
-                    }`}
-                  />
-                  <div>
-                    <p className="text-sm leading-5 text-zinc-900">{notification.message}</p>
-                    <p className="mt-1 text-xs font-semibold text-zinc-400">
-                      {notification.timeLabel}
-                    </p>
+        <>
+          <div aria-hidden className="fixed inset-0 z-20 bg-zinc-950/20 sm:hidden" />
+
+          {/*
+            Below sm the panel is `fixed` to the viewport rather than anchored to
+            the bell. Right-anchoring a fixed-width popover to a button that is not
+            itself at the screen edge pushed the panel off the left of the screen
+            (measured: x = -77px at 390px wide, -107px at 360px), and max-width
+            cannot fix that because it caps width without moving the box. The
+            sticky header sets no transform, so `fixed` resolves against the
+            viewport and the sheet always fits. sm+ keeps the original popover.
+          */}
+          <div className="fixed inset-x-3 top-[4.5rem] z-30 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
+            <div className="flex items-center justify-between gap-2 border-b border-zinc-100 px-4 py-3 text-sm font-bold text-zinc-950">
+              Notifications
+              <button
+                aria-label="Close notifications"
+                className="-my-1 -mr-1 grid size-7 place-items-center rounded-md text-lg leading-none text-zinc-400 transition-colors hover:text-zinc-800 sm:hidden"
+                onClick={() => setOpen(false)}
+                type="button"
+              >
+                &times;
+              </button>
+            </div>
+            {/*
+              Height is derived from what is left below the panel's own top edge
+              and its header rather than a fixed max-h, so the list still fits on a
+              short screen such as a phone in landscape (a flat sm:max-h-80 there
+              ran 24px past the bottom of a 400px-tall viewport). dvh tracks the
+              collapsing mobile browser toolbar; vh does not.
+            */}
+            <div className="max-h-[calc(100dvh-9rem)] overflow-y-auto overscroll-contain sm:max-h-[min(20rem,calc(100dvh-7rem))]">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-zinc-500">
+                  You&apos;re all caught up.
+                </p>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    className="flex gap-3 border-b border-zinc-50 px-4 py-3 last:border-b-0"
+                    key={notification.id}
+                  >
+                    <span
+                      aria-hidden
+                      className={`mt-1.5 size-2 shrink-0 rounded-full ${
+                        notification.unread ? "bg-brand" : "bg-zinc-200"
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm leading-5 text-zinc-900">{notification.message}</p>
+                      <p className="mt-1 text-xs font-semibold text-zinc-400">
+                        {notification.timeLabel}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

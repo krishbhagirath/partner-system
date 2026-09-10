@@ -107,27 +107,45 @@ export async function AppShell({
           <p className="font-display text-lg font-bold">{pageTitle}</p>
           <div className="flex items-center gap-3">
             <NotificationsBell notifications={notificationViews} />
-            <Link className={`${button.primary} hidden sm:inline-flex`} href="/sections">
+            {/*
+              `max-sm:hidden`, not `hidden sm:inline-flex`: button.primary already
+              carries an unprefixed `inline-flex`, and Tailwind orders utilities by
+              its own rules rather than by class-attribute order, so that
+              `inline-flex` beat the plain `hidden` and the button stayed visible on
+              phones (verified at 390px). It shoved the bell ~115px inward, which is
+              what pushed the notification panel off the left edge. A max-width
+              variant is emitted after the base utilities, so it wins.
+            */}
+            <Link className={`${button.primary} max-sm:hidden`} href="/sections">
               Find partners
             </Link>
             <SignOutButton className="hidden text-sm font-semibold text-zinc-500 hover:text-brand lg:inline-flex" />
           </div>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-zinc-200 bg-white px-3 py-2 lg:hidden">
-          {navItems.map((item) => (
-            <Link
-              className={mobileNavLinkClass(item.key === active)}
-              href={item.href}
-              key={item.key}
-            >
-              {item.label}
+        {/*
+          The semester picker has to be repeated here: the sidebar that holds the
+          other copy is `lg:flex`, so below 1024px it was in the DOM but never
+          rendered. It sits outside the scrolling nav so it stays pinned instead of
+          scrolling out of reach with the links.
+        */}
+        <div className="flex items-center gap-2 border-b border-zinc-200 bg-white px-3 py-2 lg:hidden">
+          <nav aria-label="Sections" className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
+            {navItems.map((item) => (
+              <Link
+                className={mobileNavLinkClass(item.key === active)}
+                href={item.href}
+                key={item.key}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link className={mobileNavLinkClass(active === "profile")} href="/profile">
+              Profile
             </Link>
-          ))}
-          <Link className={mobileNavLinkClass(active === "profile")} href="/profile">
-            Profile
-          </Link>
-        </nav>
+          </nav>
+          <TermSwitcher activeTerm={activeTerm} terms={terms} variant="compact" />
+        </div>
 
         <main className="mx-auto w-full max-w-[1160px] flex-1 px-6 py-8 sm:px-8">{children}</main>
       </div>
