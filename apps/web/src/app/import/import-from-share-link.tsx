@@ -218,7 +218,9 @@ function DoneView({
       </h1>
       <p className="mt-2 text-[15px] leading-7 text-zinc-600">
         Imported {imported} lab/tutorial {imported === 1 ? "section" : "sections"}
-        {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this semester replaces them.
+        {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this semester keeps the
+        courses you already had — it only adds new ones and drops any you are no longer
+        enrolled in.
       </p>
 
       <div className="mx-auto mt-8 grid max-w-xs gap-3">

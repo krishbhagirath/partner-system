@@ -33,9 +33,18 @@ export async function updatePartnerRequestStatus(formData: FormData) {
 
   const user = await requireUser();
   let notice = parsedForm.data.status === "ACCEPTED" ? "request-accepted" : "request-declined";
+  // Carried into the redirect so the page can offer "we need more people" right at the
+  // moment the team forms — the one time the user is guaranteed to be looking.
+  let teamId: string | null = null;
 
   try {
-    await respondToPartnerRequest(user.id, parsedForm.data.requestId, parsedForm.data.status);
+    const updated = await respondToPartnerRequest(
+      user.id,
+      parsedForm.data.requestId,
+      parsedForm.data.status,
+    );
+
+    teamId = updated.targetTeamId;
   } catch (error) {
     // Expected conflicts (request already resolved, section already matched)
     // resolve by refreshing the page so it shows the current state instead of
@@ -53,7 +62,10 @@ export async function updatePartnerRequestStatus(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/matches");
   revalidatePath("/sections");
-  redirect(`/requests?notice=${notice}&tab=received`);
+  revalidatePath("/settings");
+  redirect(
+    `/requests?notice=${notice}&tab=received${teamId ? `&team=${encodeURIComponent(teamId)}` : ""}`,
+  );
 }
 
 export async function withdrawSentRequest(formData: FormData) {

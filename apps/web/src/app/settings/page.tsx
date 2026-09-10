@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { AppShell } from "@/components/app-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { TeamCompletionControls } from "@/components/team-controls";
 import { NoticeBanner } from "@/components/notice-banner";
 import { PendingButton } from "@/components/pending-button";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -11,15 +12,15 @@ import { badge, button } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import {
   buildSectionDiscoveryKey,
-  getMatchedPartnersBySectionKeyForUser,
+  getTeamsBySectionKeyForUser,
   getUserProfile,
   listSectionsWithDiscoverabilityForUser,
-  type MatchedPartner,
+  type ViewerTeam,
 } from "@/server/lab-partner";
 
 import {
   deleteOwnAccount,
-  unmatchPartner,
+  leaveTeamAction,
   updateNotificationPreferencesAction,
   updateSectionDiscoverability,
 } from "./actions";
@@ -40,9 +41,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const user = await requirePageUser();
   const notice = (await searchParams)?.notice;
 
-  const [sections, matchedPartnersBySectionKey, profile] = await Promise.all([
+  const [sections, teamsBySectionKey, profile] = await Promise.all([
     listSectionsWithDiscoverabilityForUser(user.id),
-    getMatchedPartnersBySectionKeyForUser(user.id),
+    getTeamsBySectionKeyForUser(user.id),
     getUserProfile(user.id),
   ]);
 
@@ -75,8 +76,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   {group.sections.map((section) => (
                     <DiscoverabilitySectionForm
                       key={section.id}
-                      matchedPartner={
-                        matchedPartnersBySectionKey.get(buildSectionDiscoveryKey(section)) ?? null
+                      viewerTeam={
+                        teamsBySectionKey.get(buildSectionDiscoveryKey(section)) ?? null
                       }
                       section={section}
                     />
@@ -169,10 +170,10 @@ function ToggleRow({
 }
 
 function DiscoverabilitySectionForm({
-  matchedPartner,
   section,
+  viewerTeam,
 }: {
-  matchedPartner: MatchedPartner | null;
+  viewerTeam: ViewerTeam | null;
   section: SettingsSection;
 }) {
   const discoverability = section.discoverableSections[0] ?? null;
@@ -181,7 +182,7 @@ function DiscoverabilitySectionForm({
   return (
     <article
       className={`grid gap-4 rounded-xl border border-zinc-200 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)] ${
-        matchedPartner ? "bg-brand/[0.04]" : isDiscoverable ? "bg-emerald-50/40" : "bg-white"
+        viewerTeam ? "bg-brand/[0.04]" : isDiscoverable ? "bg-emerald-50/40" : "bg-white"
       }`}
     >
       <div>
@@ -190,10 +191,24 @@ function DiscoverabilitySectionForm({
           <h3 className="font-bold text-zinc-950">{section.sectionCode}</h3>
           <span
             className={
-              matchedPartner ? badge.matched : isDiscoverable ? badge.success : badge.neutral
+              viewerTeam
+                ? viewerTeam.isComplete
+                  ? badge.matched
+                  : badge.warning
+                : isDiscoverable
+                  ? badge.success
+                  : badge.neutral
             }
           >
-            {matchedPartner ? "Matched" : isDiscoverable ? "Discoverable" : "Private"}
+            {viewerTeam
+              ? viewerTeam.isComplete
+                ? viewerTeam.teammates.length === 1
+                  ? "Matched"
+                  : `Team of ${viewerTeam.teammates.length + 1}`
+                : "Looking for more"
+              : isDiscoverable
+                ? "Discoverable"
+                : "Private"}
           </span>
         </div>
         {section.location ? (
@@ -201,32 +216,45 @@ function DiscoverabilitySectionForm({
         ) : null}
       </div>
 
-      {matchedPartner ? (
+      {viewerTeam ? (
         <div className="rounded-lg border border-brand/25 bg-white px-4 py-4">
-          <p className="text-xs font-bold uppercase text-brand">Confirmed partner</p>
-          <h4 className="mt-2 font-bold text-zinc-950">
-            {formatUserDisplayName(matchedPartner.partner)}
-          </h4>
-          <p className="mt-1 text-sm font-semibold text-zinc-600">{matchedPartner.partner.email}</p>
-          {matchedPartner.partner.contactPhone ? (
-            <p className="mt-1 text-sm text-zinc-600">📞 {matchedPartner.partner.contactPhone}</p>
-          ) : null}
-          {matchedPartner.partner.contactInstagram ? (
-            <p className="mt-1 text-sm text-zinc-600">
-              📷 {matchedPartner.partner.contactInstagram}
-            </p>
-          ) : null}
-          {matchedPartner.partner.contactOther ? (
-            <p className="mt-1 text-sm text-zinc-600">💬 {matchedPartner.partner.contactOther}</p>
-          ) : null}
-          <form action={unmatchPartner} className="mt-3">
-            <input name="requestId" type="hidden" value={matchedPartner.requestId} />
+          <p className="text-xs font-bold uppercase text-brand">
+            {viewerTeam.teammates.length === 1
+              ? "Confirmed partner"
+              : `Your team of ${viewerTeam.teammates.length + 1}`}
+          </p>
+          {viewerTeam.teammates.map((teammate) => (
+            <div className="mt-2" key={teammate.id}>
+              <h4 className="font-bold text-zinc-950">{formatUserDisplayName(teammate)}</h4>
+              <p className="mt-1 text-sm font-semibold text-zinc-600">{teammate.email}</p>
+              {teammate.contactPhone ? (
+                <p className="mt-1 text-sm text-zinc-600">📞 {teammate.contactPhone}</p>
+              ) : null}
+              {teammate.contactInstagram ? (
+                <p className="mt-1 text-sm text-zinc-600">📷 {teammate.contactInstagram}</p>
+              ) : null}
+              {teammate.contactOther ? (
+                <p className="mt-1 text-sm text-zinc-600">💬 {teammate.contactOther}</p>
+              ) : null}
+            </div>
+          ))}
+          <TeamCompletionControls
+            isComplete={viewerTeam.isComplete}
+            redirectTo="/settings"
+            teamId={viewerTeam.teamId}
+          />
+          <form action={leaveTeamAction} className="mt-3">
+            <input name="teamId" type="hidden" value={viewerTeam.teamId} />
             <ConfirmSubmitButton
               className={button.danger}
-              confirmMessage="Remove this match? You will both reappear in discovery for this section if you are still marked as looking."
+              confirmMessage={
+                viewerTeam.teammates.length === 1
+                  ? "Remove this match? You will both reappear in discovery for this section if you are still marked as looking."
+                  : "Leave this team? The others stay on it, and you'll reappear in discovery for this section if you are still marked as looking."
+              }
               pendingLabel="Removing..."
             >
-              Unmatch
+              {viewerTeam.teammates.length === 1 ? "Unmatch" : "Leave team"}
             </ConfirmSubmitButton>
           </form>
         </div>

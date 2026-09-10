@@ -70,6 +70,7 @@ model User {
   sentPartnerRequests     PartnerRequest[]      @relation("PartnerRequestSender")
   receivedPartnerRequests PartnerRequest[]      @relation("PartnerRequestReceiver")
   partnerNeedVotes        PartnerNeedVote[]
+  teamMemberships         TeamMember[]
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
 }
@@ -147,6 +148,7 @@ model Section {
   importJob            ImportJob?            @relation(fields: [importJobId], references: [id], onDelete: SetNull)
   discoverableSections DiscoverableSection[]
   partnerRequests      PartnerRequest[]
+  teamMemberships      TeamMember[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -176,11 +178,22 @@ model PartnerRequest {
   senderId   String
   receiverId String
   sectionId  String
+  // Context only, never authoritative: the open team the sender meant to join
+  // when they sent this. Accepting recomputes the target from the responder's
+  // current team (they may have left since), then overwrites this with the team
+  // the request actually produced — including the new-pair case — so it ends up
+  // meaning "the team this request is about", which is what the notification
+  // feed and post-accept deep links need.
+  //
+  // Teams are created lazily on the first accept; solo students deliberately do
+  // not get a team of one.
+  targetTeamId String?
   note       String?
   status     PartnerRequestStatus @default(PENDING)
   sender     User                 @relation("PartnerRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver   User                 @relation("PartnerRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
   section    Section              @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  targetTeam Team?                @relation(fields: [targetTeamId], references: [id], onDelete: SetNull)
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
@@ -188,6 +201,79 @@ model PartnerRequest {
   @@index([receiverId, status])
   @@index([senderId, status])
   @@index([sectionId, status])
+  @@index([targetTeamId, status])
+}
+
+// A team is a set of students working together in one section. A partnership is
+// simply a team of two — there is no separate "match" concept and no declared or
+// maximum team size, because nothing in the imported schedule data says how big a
+// course's groups should be.
+//
+// `isComplete` defaults to true so a newly formed pair behaves exactly like a
+// confirmed match does today: hidden from discovery, no further join requests.
+// Most McMaster labs are pairs, and a finished pair never returns to the app to
+// close their team, so the default has to be correct for the user who does
+// nothing. Teams that need more people flip it off explicitly.
+model Team {
+  id            String           @id @default(cuid())
+  // Section identity is denormalized onto the team because Section rows are
+  // per-user — every student in the same lab owns a separate row, so there is no
+  // canonical section to point at. These are the same seven fields that
+  // buildSectionDiscoveryKey() joins (server/lab-partner.ts).
+  //
+  // Longer term this wants a canonical SectionIdentity table that Section,
+  // DiscoverableSection, PartnerRequest and Team all reference; sectionKey buys
+  // most of that benefit without backfilling an id onto four existing tables.
+  term          String
+  courseCode    String
+  componentType ComponentType
+  sectionCode   String
+  dayOfWeek     DayOfWeek
+  startTime     DateTime         @db.Time(0)
+  endTime       DateTime         @db.Time(0)
+  // buildSectionDiscoveryKey() output for the fields above, stored so it can be
+  // indexed and referenced by TeamMember's composite foreign key.
+  sectionKey    String
+  isComplete    Boolean          @default(true)
+  members       TeamMember[]
+  joinRequests  PartnerRequest[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  // Exists only to give TeamMember's composite foreign key a unique target.
+  // Trivially satisfied, since `id` is already the primary key.
+  @@unique([id, sectionKey])
+  @@index([sectionKey, isComplete])
+}
+
+model TeamMember {
+  id         String   @id @default(cuid())
+  teamId     String
+  // Write-once copy of Team.sectionKey. A unique constraint cannot span a
+  // relation, so the constraint that matters has to live on the row carrying
+  // userId. The composite foreign key below is what stops this copy from ever
+  // disagreeing with the team's own key — without it the denormalized value
+  // could drift and silently defeat the uniqueness guarantee.
+  sectionKey String
+  userId     String
+  // The member's own Section row. Required and cascading so that dropping or
+  // re-importing a section clears team membership through exactly the same
+  // mechanism that already clears PartnerRequests, rather than leaving students
+  // on teams for courses they are no longer in.
+  sectionId  String
+  team       Team     @relation(fields: [teamId, sectionKey], references: [id, sectionKey], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section    Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+
+  // The core invariant: one team per student per section identity, enforced by
+  // Postgres instead of by the application-level check it replaces. Note that
+  // [teamId, userId] would be redundant — same team implies same sectionKey via
+  // the composite FK, so it is already covered here.
+  @@unique([userId, sectionKey])
+  @@index([teamId])
+  @@index([sectionId])
+  @@index([userId])
 }
 
 // Crowd-sourced signal on whether a course's lab/tutorial actually involves

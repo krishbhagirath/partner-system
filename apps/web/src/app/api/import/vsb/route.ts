@@ -8,7 +8,7 @@ import {
 } from "@/lib/rate-limit";
 import { internalErrorResponse, logServerError } from "@/server/api-error";
 import { AuthenticationError, requireUser } from "@/server/auth";
-import { replaceSectionsForTerm } from "@/server/lab-partner";
+import { syncSectionsForTerm } from "@/server/lab-partner";
 import { VsbImportError, parseVsbShareLink } from "@/server/vsb-import";
 
 export const dynamic = "force-dynamic";
@@ -50,11 +50,20 @@ export async function POST(request: Request) {
 
   try {
     const { term, sections } = await parseVsbShareLink(parsed.data.link);
-    // Re-import replaces this term's sections (wipe + rewrite), never duplicates.
-    const result = await replaceSectionsForTerm(user.id, term, sections);
+    // Re-import reconciles rather than replaces: courses you already had keep their
+    // row, so their discoverability, requests and team survive. Only genuinely new
+    // sections are added, and only ones no longer on your timetable are removed.
+    const result = await syncSectionsForTerm(user.id, term, sections);
 
     return NextResponse.json(
-      { imported: result.count, found: sections.length, term },
+      {
+        added: result.added,
+        found: sections.length,
+        imported: sections.length,
+        kept: result.kept,
+        removed: result.removed,
+        term,
+      },
       { status: 200 },
     );
   } catch (error) {

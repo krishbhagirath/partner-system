@@ -7,7 +7,7 @@ import { avatarColorClass, statCard } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import {
   countPendingIncomingRequests,
-  listMatchesForUser,
+  listTeamsForUser,
   listSectionDiscoveryForUser,
   listSectionsWithDiscoverabilityForUser,
   resolveActiveTerm,
@@ -26,12 +26,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const resolvedSearchParams = await searchParams;
   const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
 
-  const [sectionsWithDiscoverability, discoverySections, pendingRequestsCount, matches] =
+  const [sectionsWithDiscoverability, discoverySections, pendingRequestsCount, teams] =
     await Promise.all([
       listSectionsWithDiscoverabilityForUser(user.id, activeTerm ?? undefined),
       listSectionDiscoveryForUser(user.id, activeTerm ?? undefined),
       countPendingIncomingRequests(user.id),
-      listMatchesForUser(user.id, activeTerm ?? undefined),
+      listTeamsForUser(user.id, activeTerm ?? undefined),
     ]);
 
   const discoveryBySectionId = new Map(
@@ -41,11 +41,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const lookingForSections = sectionsWithDiscoverability
     .filter((section) => section.discoverableSections[0]?.isActive)
     .map((section) => ({
-      candidateCount: discoveryBySectionId.get(section.id)?.matches.length ?? 0,
-      isMatched: Boolean(discoveryBySectionId.get(section.id)?.matchedPartner),
+      candidateCount:
+        (discoveryBySectionId.get(section.id)?.candidates.length ?? 0) +
+        (discoveryBySectionId.get(section.id)?.openTeams.length ?? 0),
+      // A section is "done" only once the team is complete. A team still looking for
+      // more people is very much still looking.
+      isSettled: discoveryBySectionId.get(section.id)?.viewerTeam?.isComplete === true,
       section,
     }))
-    .filter((entry) => !entry.isMatched);
+    .filter((entry) => !entry.isSettled);
 
   const seenCandidateIds = new Set<string>();
   const suggestedCandidates: Array<{
@@ -56,11 +60,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }> = [];
 
   for (const discoverySection of discoverySections) {
-    if (discoverySection.matchedPartner) {
+    if (discoverySection.viewerTeam?.isComplete) {
       continue;
     }
 
-    for (const match of discoverySection.matches) {
+    for (const match of discoverySection.candidates) {
       if (match.request || seenCandidateIds.has(match.user.id)) {
         continue;
       }
@@ -108,10 +112,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
         <div className={statCard}>
           <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-            Confirmed matches
+            Your teams
           </p>
           <p className="mt-2 font-display text-3xl font-bold text-gold-tint-text">
-            {matches.length}
+            {teams.length}
           </p>
         </div>
       </div>

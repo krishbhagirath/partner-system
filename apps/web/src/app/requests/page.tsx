@@ -12,8 +12,13 @@ import {
   getInitials,
 } from "@/lib/format";
 import { avatarColorClass, badge, button } from "@/lib/ui";
+import { TeamCompletePrompt } from "@/components/team-controls";
 import { requirePageUser } from "@/server/auth";
-import { getPartnerRequestsForUser, resolveActiveTerm } from "@/server/lab-partner";
+import {
+  getPartnerRequestsForUser,
+  getTeamsBySectionKeyForUser,
+  resolveActiveTerm,
+} from "@/server/lab-partner";
 
 import { updatePartnerRequestStatus, withdrawSentRequest } from "./actions";
 
@@ -27,6 +32,7 @@ type RequestsPageProps = {
   searchParams?: Promise<{
     notice?: string;
     tab?: string;
+    team?: string;
     term?: string;
   }>;
 };
@@ -37,6 +43,12 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
   const notice = resolvedSearchParams?.notice;
   const tab = resolvedSearchParams?.tab === "sent" ? "sent" : "received";
   const { activeTerm, terms } = await resolveActiveTerm(user.id, resolvedSearchParams?.term);
+  const promptTeamId = resolvedSearchParams?.team;
+  const promptTeam = promptTeamId
+    ? [...(await getTeamsBySectionKeyForUser(user.id)).values()].find(
+        (team) => team.teamId === promptTeamId,
+      )
+    : undefined;
 
   const partnerRequests = await getPartnerRequestsForUser(user.id, activeTerm ?? undefined);
   const incomingRequests = partnerRequests.filter((request) => request.receiverId === user.id);
@@ -53,6 +65,14 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
       </p>
 
       <NoticeBanner clearHref={`/requests?tab=${tab}`} notice={notice} />
+
+      {promptTeam ? (
+        <TeamCompletePrompt
+          isComplete={promptTeam.isComplete}
+          redirectTo={`/requests?tab=${tab}`}
+          teamId={promptTeam.teamId}
+        />
+      ) : null}
 
       <div className="mt-6 flex w-fit gap-1 rounded-lg bg-zinc-100 p-1">
         <Link className={tabClass(tab === "received")} href="/requests?tab=received">

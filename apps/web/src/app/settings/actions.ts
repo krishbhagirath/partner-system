@@ -9,8 +9,9 @@ import { logServerError } from "@/server/api-error";
 import { requireUser } from "@/server/auth";
 import {
   deleteUser,
-  dissolveMatch,
+  leaveTeam,
   PartnerRequestError,
+  setTeamCompletion,
   toggleDiscoverableSection,
   updateNotificationPreferences,
 } from "@/server/lab-partner";
@@ -22,8 +23,13 @@ const discoverabilityFormSchema = z.object({
   sectionId: z.string().min(1),
 });
 
-const requestIdFormSchema = z.object({
-  requestId: z.string().min(1),
+const teamIdFormSchema = z.object({
+  teamId: z.string().min(1),
+});
+
+const teamCompletionFormSchema = z.object({
+  isComplete: z.boolean(),
+  teamId: z.string().min(1),
 });
 
 const notificationPreferencesFormSchema = z.object({
@@ -69,23 +75,23 @@ export async function updateSectionDiscoverability(formData: FormData) {
   redirect("/settings?notice=discoverability-saved");
 }
 
-export async function unmatchPartner(formData: FormData) {
-  const parsedForm = requestIdFormSchema.safeParse({
-    requestId: formData.get("requestId"),
+export async function leaveTeamAction(formData: FormData) {
+  const parsedForm = teamIdFormSchema.safeParse({
+    teamId: formData.get("teamId"),
   });
 
   if (!parsedForm.success) {
-    throw new Error("Unable to remove the match.");
+    throw new Error("Unable to leave the team.");
   }
 
   const user = await requireUser();
-  let notice = "unmatched";
+  let notice = "team-left";
 
   try {
-    await dissolveMatch(user.id, parsedForm.data.requestId);
+    await leaveTeam(user.id, parsedForm.data.teamId);
   } catch (error) {
     if (!(error instanceof PartnerRequestError)) {
-      logServerError("unmatchPartner action", error, { userId: user.id });
+      logServerError("leaveTeamAction", error, { userId: user.id });
 
       throw error;
     }
@@ -98,6 +104,42 @@ export async function unmatchPartner(formData: FormData) {
   revalidatePath("/matches");
   revalidatePath("/sections");
   redirect(`/settings?notice=${notice}`);
+}
+
+/** Opens a team to new members, or closes it. Any member may do either. */
+export async function updateTeamCompletionAction(formData: FormData) {
+  const parsedForm = teamCompletionFormSchema.safeParse({
+    isComplete: formData.get("isComplete") === "true",
+    teamId: formData.get("teamId"),
+  });
+
+  if (!parsedForm.success) {
+    throw new Error("Unable to update the team.");
+  }
+
+  const user = await requireUser();
+  const redirectTo = formData.get("redirectTo");
+  const target = typeof redirectTo === "string" && redirectTo.startsWith("/") ? redirectTo : "/settings";
+  let notice = parsedForm.data.isComplete ? "team-completed" : "team-opened";
+
+  try {
+    await setTeamCompletion(user.id, parsedForm.data.teamId, parsedForm.data.isComplete);
+  } catch (error) {
+    if (!(error instanceof PartnerRequestError)) {
+      logServerError("updateTeamCompletionAction", error, { userId: user.id });
+
+      throw error;
+    }
+
+    notice = "request-conflict";
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath("/sections");
+  revalidatePath("/requests");
+  redirect(`${target}?notice=${notice}`);
 }
 
 export async function updateNotificationPreferencesAction(formData: FormData) {

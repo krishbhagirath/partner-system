@@ -23,7 +23,20 @@ const noticeCopy: Record<string, { message: string; tone: "success" | "warning" 
     tone: "success",
   },
   "request-accepted": {
-    message: "Request accepted. You are now matched for that section.",
+    message: "Request accepted. You're on a team for that section.",
+    tone: "success",
+  },
+  "team-completed": {
+    message: "Team marked complete. Any pending join requests were canceled.",
+    tone: "success",
+  },
+  "team-left": {
+    message:
+      "You left the team. Sections marked as looking are discoverable to classmates again.",
+    tone: "success",
+  },
+  "team-opened": {
+    message: "Your team is open — classmates in that section can now ask to join.",
     tone: "success",
   },
   "request-conflict": {

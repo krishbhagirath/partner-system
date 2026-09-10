@@ -1,3 +1,13 @@
+// PARTIAL, READ-ONLY MIRROR of the canonical schema at ../../prisma/schema.prisma.
+//
+// It exists only so `prisma generate` can produce a client for the three models this
+// worker touches (User, ImportJob, Section). It intentionally omits Account, Session,
+// VerificationToken, PartnerNeedVote, Team and TeamMember.
+//
+// NEVER run `prisma migrate` from this directory: Prisma would read this file as the
+// intended state of the database and offer to DROP every omitted table. All migrations
+// live in the root workspace.
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"

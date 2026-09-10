@@ -17,3 +17,27 @@
  *   - api/auth/verify-email + /verify-email/resend + the resend button UI
  */
 export const EMAIL_VERIFICATION_ENABLED = false;
+
+/**
+ * Master switch for variable-size teams.
+ *
+ * When OFF the app behaves exactly as it did before teams existed: accepting a
+ * request creates a two-person team that is born complete, which is indistinguishable
+ * from the old "one accepted PartnerRequest = one match" model. Nothing can ever
+ * become open, so no team can exceed two members.
+ *
+ * The schema, migration and backfill are deliberately NOT gated — a backfilled team
+ * is by construction exactly an old match (2 members, isComplete = true), which is
+ * what makes "off == before" true rather than approximate.
+ *
+ * Only three things are wired to this flag:
+ *   - server/team-rules.ts (shapeDiscoveryEntry) — hides open teams from discovery
+ *     and treats an open team as complete, so flipping this back off after teams
+ *     have been opened degrades safely instead of leaking a half-built feature.
+ *   - server/lab-partner.ts (setTeamCompletion) — refuses to open a team.
+ *   - the completion toggles and the post-accept prompt in the UI.
+ *
+ * Everything else branches on team size, not on this flag, so a two-person team
+ * renders with the original "partner" wording either way.
+ */
+export const TEAMS_ENABLED = true;

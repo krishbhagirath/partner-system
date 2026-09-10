@@ -44,14 +44,19 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
     : groupedSections;
 
   const availableClassmatesCount = discoverySections.reduce(
-    (count, discoverySection) => count + discoverySection.matches.length,
+    (count, discoverySection) =>
+      count +
+      discoverySection.candidates.length +
+      discoverySection.openTeams.reduce((members, team) => members + team.members.length, 0),
     0,
   );
   const discoverableSectionCount = discoverySections.filter(
-    (discoverySection) => discoverySection.matches.length > 0,
+    (discoverySection) =>
+      discoverySection.candidates.length + discoverySection.openTeams.length > 0,
   ).length;
+  // Sections where you already have a settled team — the "you're done here" count.
   const matchedSectionCount = discoverySections.filter(
-    (discoverySection) => discoverySection.matchedPartner !== null,
+    (discoverySection) => discoverySection.viewerTeam?.isComplete === true,
   ).length;
 
   return (
