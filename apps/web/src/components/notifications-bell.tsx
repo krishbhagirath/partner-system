@@ -50,7 +50,7 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
       <button
         aria-expanded={open}
         aria-label="Notifications"
-        className="relative grid size-9 place-items-center rounded-md border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-gold hover:text-zinc-800"
+        className="relative grid size-9 place-items-center rounded-md border border-rule bg-surface text-muted transition-colors hover:border-gold hover:text-ink"
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
@@ -75,7 +75,7 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
 
       {open ? (
         <>
-          <div aria-hidden className="fixed inset-0 z-20 bg-zinc-950/20 sm:hidden" />
+          <div aria-hidden className="fixed inset-0 z-20 bg-ink/25 sm:hidden" />
 
           {/*
             Below sm the panel is `fixed` to the viewport rather than anchored to
@@ -86,12 +86,12 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
             sticky header sets no transform, so `fixed` resolves against the
             viewport and the sheet always fits. sm+ keeps the original popover.
           */}
-          <div className="fixed inset-x-3 top-[4.5rem] z-30 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
-            <div className="flex items-center justify-between gap-2 border-b border-zinc-100 px-4 py-3 text-sm font-bold text-zinc-950">
+          <div className="fixed inset-x-3 top-[4.5rem] z-30 overflow-hidden rounded-xl border border-rule bg-surface shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
+            <div className="flex items-center justify-between gap-2 border-b border-rule px-4 py-3 text-sm font-bold text-ink">
               Notifications
               <button
                 aria-label="Close notifications"
-                className="-my-1 -mr-1 grid size-7 place-items-center rounded-md text-lg leading-none text-zinc-400 transition-colors hover:text-zinc-800 sm:hidden"
+                className="-my-1 -mr-1 grid size-7 place-items-center rounded-md text-lg leading-none text-muted transition-colors hover:text-ink sm:hidden"
                 onClick={() => setOpen(false)}
                 type="button"
               >
@@ -107,24 +107,24 @@ export function NotificationsBell({ notifications }: { notifications: Notificati
             */}
             <div className="max-h-[calc(100dvh-9rem)] overflow-y-auto overscroll-contain sm:max-h-[min(20rem,calc(100dvh-7rem))]">
               {notifications.length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-zinc-500">
+                <p className="px-4 py-6 text-center text-sm text-muted">
                   You&apos;re all caught up.
                 </p>
               ) : (
                 notifications.map((notification) => (
                   <div
-                    className="flex gap-3 border-b border-zinc-50 px-4 py-3 last:border-b-0"
+                    className="flex gap-3 border-b border-rule px-4 py-3 last:border-b-0"
                     key={notification.id}
                   >
                     <span
                       aria-hidden
                       className={`mt-1.5 size-2 shrink-0 rounded-full ${
-                        notification.unread ? "bg-brand" : "bg-zinc-200"
+                        notification.unread ? "bg-brand" : "bg-rule"
                       }`}
                     />
                     <div className="min-w-0">
-                      <p className="text-sm leading-5 text-zinc-900">{notification.message}</p>
-                      <p className="mt-1 text-xs font-semibold text-zinc-400">
+                      <p className="text-sm leading-5 text-ink">{notification.message}</p>
+                      <p className="mt-1 text-xs font-semibold text-muted">
                         {notification.timeLabel}
                       </p>
                     </div>

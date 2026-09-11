@@ -81,7 +81,7 @@ export function NoticeBanner({ clearHref, notice }: { clearHref: string; notice?
       <span>{copy.message}</span>
       <Link
         aria-label="Dismiss notification"
-        className="rounded border border-current/30 px-2 py-1 text-xs font-bold uppercase transition hover:bg-white/60"
+        className="rounded border border-current/30 px-2 py-1 text-xs font-bold uppercase transition hover:bg-surface/60"
         href={clearHref}
       >
         Dismiss

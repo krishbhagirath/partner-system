@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { formatTerm } from "@/lib/format";
-import { badge, button, statCard } from "@/lib/ui";
+import { button, pageLede, pageTitle } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import { listSectionDiscoveryForUser, resolveActiveTerm } from "@/server/lab-partner";
 
@@ -61,54 +61,38 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
 
   return (
     <AppShell active="discovery" activeTerm={activeTerm} pageTitle="Find partners" terms={terms} user={user}>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">Find partners</h1>
-      <p className="mt-1 text-[15px] text-zinc-500">
-        Browse classmates who are actively looking for partners in your imported labs and
-        tutorials.
+      <h1 className={pageTitle}>Find partners</h1>
+      <p className={pageLede}>
+        Classmates in your exact sections who are also looking. Expand a section to see them.
       </p>
 
       <NoticeBanner clearHref="/sections" notice={notice} />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className={statCard}>
-          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Your sections</p>
-          <p className="mt-1 font-display text-2xl font-bold text-zinc-950">
-            {discoverySections.length}
-          </p>
-        </div>
-        <div className={statCard}>
-          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-            Matched sections
-          </p>
-          <p className="mt-1 font-display text-2xl font-bold text-brand">{matchedSectionCount}</p>
-        </div>
-        <div className={statCard}>
-          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-            Sections with classmates
-          </p>
-          <p className="mt-1 font-display text-2xl font-bold text-brand">
-            {discoverableSectionCount}
-          </p>
-        </div>
-        <div className={statCard}>
-          <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-            Available classmates
-          </p>
-          <p className="mt-1 font-display text-2xl font-bold text-zinc-950">
-            {availableClassmatesCount}
-          </p>
-        </div>
-      </div>
+      {/*
+        Four counters used to sit here. They answered questions nobody asks. One line
+        of prose says the same thing and gives the space back to the sections.
+      */}
+      {discoverySections.length > 0 ? (
+        <p className="tnum mt-5 border-y border-rule py-3 text-sm text-muted">
+          <strong className="font-semibold text-ink">{availableClassmatesCount}</strong>{" "}
+          {availableClassmatesCount === 1 ? "classmate" : "classmates"} available across{" "}
+          <strong className="font-semibold text-ink">{discoverableSectionCount}</strong> of your{" "}
+          {discoverySections.length} {discoverySections.length === 1 ? "section" : "sections"}
+          {matchedSectionCount > 0 ? `, and ${matchedSectionCount} already sorted` : ""}.
+        </p>
+      ) : null}
 
       {discoverySections.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-8 text-center shadow-sm">
-          <h2 className="text-xl font-black text-zinc-950">No sections to browse yet</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">
-            Import your schedule first. Once your labs and tutorials are saved, this page will show
-            classmates who made matching sections discoverable.
+        <div className="mt-8 max-w-[52ch]">
+          <h2 className="font-display text-[19px] font-bold text-ink">
+            Import your timetable to get started
+          </h2>
+          <p className="mt-2 text-[15px] leading-6 text-muted">
+            Once your labs and tutorials are saved, this page fills up with the classmates in
+            those exact sections who are also looking for a partner.
           </p>
           <Link className={`${button.primary} mt-5`} href="/import">
-            Import schedule
+            Import your timetable
           </Link>
         </div>
       ) : (
@@ -128,25 +112,19 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
             ))}
           </div>
 
-          <div className="mt-6 grid gap-4">
+          {/* One course per block, separated by space and a heading rather than by
+              nesting a bordered card inside a bordered card. */}
+          <div className="mt-8 grid gap-9">
             {visibleGroups.map((group) => (
-              <section
-                className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
-                key={`${group.term}-${group.courseCode}`}
-              >
-                <header className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-stone-50/60 px-4 py-2.5">
-                  <h2 className="font-display text-base font-bold text-zinc-950">
+              <section key={`${group.term}-${group.courseCode}`}>
+                <header className="flex items-baseline justify-between gap-3 pb-2">
+                  <h2 className="font-display text-[17px] font-bold text-ink">
                     {group.courseCode}
-                    <span className="ml-2 text-xs font-semibold text-brand">
-                      {formatTerm(group.term)}
-                    </span>
                   </h2>
-                  <span className={badge.neutral}>
-                    {group.sections.length} {group.sections.length === 1 ? "section" : "sections"}
-                  </span>
+                  <span className="text-[13px] text-muted">{formatTerm(group.term)}</span>
                 </header>
 
-                <div className="divide-y divide-zinc-100">
+                <div className="divide-y divide-rule overflow-hidden rounded-md border border-rule bg-surface">
                   {group.sections.map((discoverySection) => (
                     <DiscoverySection
                       discoverySection={discoverySection}
@@ -164,10 +142,10 @@ export default async function SectionsPage({ searchParams }: SectionsPageProps) 
 }
 
 function pillClass(active: boolean) {
-  return `rounded-full border px-3.5 py-2 text-[13.5px] font-semibold transition-colors ${
+  return `rounded-md border px-3 py-1.5 text-[13.5px] font-semibold transition-colors ${
     active
       ? "border-brand bg-brand text-white"
-      : "border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand"
+      : "border-rule bg-surface text-ink-soft hover:border-ink-soft hover:text-ink"
   }`;
 }
 

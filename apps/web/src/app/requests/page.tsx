@@ -11,7 +11,7 @@ import {
   formatUserDisplayName,
   getInitials,
 } from "@/lib/format";
-import { avatarColorClass, badge, button } from "@/lib/ui";
+import { avatarColorClass, button, chip, pageLede, pageTitle } from "@/lib/ui";
 import { TeamCompletePrompt } from "@/components/team-controls";
 import { requirePageUser } from "@/server/auth";
 import {
@@ -59,8 +59,8 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
 
   return (
     <AppShell active="requests" activeTerm={activeTerm} pageTitle="Requests" terms={terms} user={user}>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">Requests</h1>
-      <p className="mt-1 text-[15px] text-zinc-500">
+      <h1 className={pageTitle}>Requests</h1>
+      <p className={pageLede}>
         Manage partner requests you&apos;ve sent and received.
       </p>
 
@@ -74,7 +74,7 @@ export default async function RequestsPage({ searchParams }: RequestsPageProps) 
         />
       ) : null}
 
-      <div className="mt-6 flex w-fit gap-1 rounded-lg bg-zinc-100 p-1">
+      <div className="mt-6 flex w-fit gap-1 rounded-lg bg-paper p-1">
         <Link className={tabClass(tab === "received")} href="/requests?tab=received">
           Received{pendingIncomingCount > 0 ? ` (${pendingIncomingCount})` : ""}
         </Link>
@@ -106,21 +106,21 @@ function ReceivedRequestCard({ request }: { request: PartnerRequestItem }) {
   const name = formatUserDisplayName(request.sender);
 
   return (
-    <article className="flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-white px-5 py-4">
+    <article className="flex flex-wrap items-center gap-4 rounded-md border border-rule bg-surface px-5 py-4">
       <span
         className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${avatarColorClass(request.sender.id)}`}
       >
         {getInitials(name)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[14.5px] font-bold text-zinc-950">
-          {name} <span className="font-normal text-zinc-400">wants to partner on</span>
+        <p className="text-[14.5px] font-bold text-ink">
+          {name} <span className="font-normal text-muted">wants to partner on</span>
         </p>
         <p className="mt-0.5 text-sm font-semibold text-brand">
           {formatSectionLabel(request.section)}
         </p>
         {request.note ? (
-          <p className="mt-1.5 text-sm leading-6 text-zinc-500">{request.note}</p>
+          <p className="mt-1.5 text-sm leading-6 text-muted">{request.note}</p>
         ) : null}
       </div>
 
@@ -152,15 +152,15 @@ function SentRequestCard({ request }: { request: PartnerRequestItem }) {
   const name = formatUserDisplayName(request.receiver);
 
   return (
-    <article className="flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-white px-5 py-4">
+    <article className="flex flex-wrap items-center gap-4 rounded-md border border-rule bg-surface px-5 py-4">
       <span
         className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${avatarColorClass(request.receiver.id)}`}
       >
         {getInitials(name)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[14.5px] font-bold text-zinc-950">{name}</p>
-        <p className="mt-0.5 text-sm text-zinc-500">{formatSectionLabel(request.section)}</p>
+        <p className="text-[14.5px] font-bold text-ink">{name}</p>
+        <p className="mt-0.5 text-sm text-muted">{formatSectionLabel(request.section)}</p>
       </div>
 
       <span className={statusBadgeClass(request.status)}>{formatStatus(request.status)}</span>
@@ -183,7 +183,7 @@ function SentRequestCard({ request }: { request: PartnerRequestItem }) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <p className="rounded-lg border border-dashed border-zinc-300 bg-white px-4 py-10 text-center text-sm text-zinc-500">
+    <p className="rounded-lg border border-dashed border-rule-strong bg-surface px-4 py-10 text-center text-sm text-muted">
       {message}
     </p>
   );
@@ -191,22 +191,22 @@ function EmptyState({ message }: { message: string }) {
 
 function tabClass(active: boolean) {
   return `rounded-md px-4 py-1.5 text-[13.5px] font-bold transition-colors ${
-    active ? "bg-white text-brand shadow-sm" : "text-zinc-500"
+    active ? "bg-surface text-brand" : "text-muted"
   }`;
 }
 
 function statusBadgeClass(status: string) {
   if (status === "ACCEPTED") {
-    return badge.success;
+    return chip.active;
   }
 
   if (status === "DECLINED") {
-    return badge.danger;
+    return chip.neutral;
   }
 
   if (status === "CANCELED") {
-    return badge.neutral;
+    return chip.neutral;
   }
 
-  return badge.warning;
+  return chip.looking;
 }

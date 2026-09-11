@@ -28,7 +28,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
     : null;
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
+    <main className="min-h-screen bg-paper text-ink">
       <section className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 py-10 text-center">
         <div className="mb-8">
           <BrandMark withTagline />
@@ -37,8 +37,8 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
         <div className="grid size-16 place-items-center rounded-full bg-brand/10 text-3xl text-brand">
           ✉
         </div>
-        <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">Check your inbox</h1>
-        <p className="mx-auto mt-3 max-w-sm text-[15px] leading-6 text-zinc-600">
+        <h1 className="mt-6 font-display text-2xl font-bold text-ink">Check your inbox</h1>
+        <p className="mx-auto mt-3 max-w-sm text-[15px] leading-6 text-ink-soft">
           {email ? (
             <>
               We sent a verification link to <span className="font-semibold">{email}</span>.
@@ -57,7 +57,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
 
         <ResendVerificationButton initialEmail={email} />
 
-        <p className="mt-6 text-sm text-zinc-500">
+        <p className="mt-6 text-sm text-muted">
           Already verified?{" "}
           <Link className="font-bold text-brand hover:underline" href="/auth/signin">
             Sign in

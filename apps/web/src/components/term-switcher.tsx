@@ -7,7 +7,7 @@ import { formatTerm } from "@/lib/format";
 const ONE_HUNDRED_EIGHTY_DAYS = 60 * 60 * 24 * 180;
 
 const selectBase =
-  "rounded-md border border-zinc-200 bg-white font-semibold text-zinc-800 focus:border-brand focus:outline-none";
+  "rounded-md border border-rule bg-surface font-semibold text-ink focus:border-brand focus:outline-none";
 
 /**
  * Semester picker for the nav. Remembers the pick in the `partnerup_term` cookie
@@ -60,7 +60,7 @@ export function TermSwitcher({
 
   return (
     <label className="mb-4 block px-1">
-      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted">
         Semester
       </span>
       <select

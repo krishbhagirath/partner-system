@@ -62,7 +62,7 @@ export function TeamCompletePrompt({
     <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/25 bg-brand-tint px-4 py-3">
       <div>
         <p className="text-sm font-bold text-brand">Team complete</p>
-        <p className="mt-0.5 text-sm text-zinc-600">
+        <p className="mt-0.5 text-sm text-ink-soft">
           Working in a bigger group? Open your team so classmates can ask to join.
         </p>
       </div>
@@ -89,12 +89,23 @@ export function TeammateContact({
     email: string;
   };
 }) {
+  // Named labels rather than emoji: ✉ 📞 📷 rendered as system emoji, clashing with
+  // the app's line-icon set, and 💬 left the reader guessing which service it meant.
+  const rows = [
+    { label: "Email", value: teammate.email },
+    { label: "Phone", value: teammate.contactPhone },
+    { label: "Instagram", value: teammate.contactInstagram },
+    { label: "Other", value: teammate.contactOther },
+  ].filter((row) => Boolean(row.value));
+
   return (
-    <div className="grid gap-1 text-sm text-zinc-500">
-      <p>✉ {teammate.email}</p>
-      {teammate.contactPhone ? <p>📞 {teammate.contactPhone}</p> : null}
-      {teammate.contactInstagram ? <p>📷 {teammate.contactInstagram}</p> : null}
-      {teammate.contactOther ? <p>💬 {teammate.contactOther}</p> : null}
-    </div>
+    <dl className="grid gap-1.5 text-[13.5px]">
+      {rows.map((row) => (
+        <div className="flex gap-2" key={row.label}>
+          <dt className="w-[70px] shrink-0 text-muted">{row.label}</dt>
+          <dd className="min-w-0 break-words text-ink-soft">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

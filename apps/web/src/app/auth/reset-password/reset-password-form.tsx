@@ -53,7 +53,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="password">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="password">
         New password
         <div className="relative">
           <input
@@ -68,7 +68,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           />
           <button
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500 hover:text-zinc-800"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted hover:text-ink"
             onClick={() => setShowPassword((value) => !value)}
             type="button"
           >
@@ -77,7 +77,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         </div>
       </label>
 
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="confirm-password">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="confirm-password">
         Re-enter password
         <input
           autoComplete="new-password"

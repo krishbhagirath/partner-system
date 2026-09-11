@@ -54,7 +54,7 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
 
   return (
     <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="email">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="email">
         Email
         <input
           autoCapitalize="none"
@@ -70,7 +70,7 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
         />
       </label>
 
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="password">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="password">
         Password
         <input
           autoComplete="current-password"
@@ -86,7 +86,7 @@ export function SignInForm({ callbackUrl }: SignInFormProps) {
 
       <div className="-mt-2 flex justify-end">
         <Link
-          className="text-xs font-semibold text-zinc-500 hover:text-brand"
+          className="text-xs font-semibold text-muted hover:text-brand"
           href="/auth/forgot-password"
         >
           Forgot password?

@@ -112,7 +112,7 @@ export function SignUpForm() {
 
   return (
     <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="display-name">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="display-name">
         Display name
         <input
           autoComplete="name"
@@ -127,7 +127,7 @@ export function SignUpForm() {
         />
       </label>
 
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="email">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="email">
         McMaster email
         <input
           autoCapitalize="none"
@@ -143,7 +143,7 @@ export function SignUpForm() {
         />
       </label>
 
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="password">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="password">
         Password
         <div className="relative">
           <input
@@ -158,7 +158,7 @@ export function SignUpForm() {
           />
           <button
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500 hover:text-zinc-800"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted hover:text-ink"
             onClick={() => setShowPassword((value) => !value)}
             type="button"
           >
@@ -167,7 +167,7 @@ export function SignUpForm() {
         </div>
       </label>
 
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="confirm-password">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="confirm-password">
         Re-enter password
         <input
           autoComplete="new-password"
@@ -184,12 +184,12 @@ export function SignUpForm() {
         ) : null}
       </label>
 
-      <div className="grid gap-3 rounded-lg border border-zinc-200 bg-stone-50/50 p-3.5">
+      <div className="grid gap-3 rounded-lg border border-rule bg-paper/50 p-3.5">
         <div>
-          <p className="text-sm font-bold text-zinc-800">
+          <p className="text-sm font-bold text-ink">
             Contact info <span className="font-semibold text-brand">(at least one)</span>
           </p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-0.5 text-xs text-muted">
             Only shared with a classmate after you match, so they can reach you.
           </p>
         </div>

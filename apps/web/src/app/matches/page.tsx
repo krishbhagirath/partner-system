@@ -8,7 +8,7 @@ import {
   TeammateContact,
 } from "@/components/team-controls";
 import { formatDate, formatSectionLabel, formatUserDisplayName, getInitials } from "@/lib/format";
-import { avatarColorClass, badge } from "@/lib/ui";
+import { avatarColorClass, chip, pageLede, pageTitle } from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import { listTeamsForUser, resolveActiveTerm } from "@/server/lab-partner";
 import { formatTeamNoun } from "@/server/team-rules";
@@ -30,8 +30,8 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
 
   return (
     <AppShell active="matches" activeTerm={activeTerm} pageTitle="Matches" terms={terms} user={user}>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">Matches</h1>
-      <p className="mt-1 text-[15px] text-zinc-500">Your confirmed lab and tutorial teams.</p>
+      <h1 className={pageTitle}>Matches</h1>
+      <p className={pageLede}>Your confirmed lab and tutorial teams.</p>
 
       <NoticeBanner clearHref="/matches" notice={resolvedSearchParams?.notice} />
 
@@ -44,7 +44,7 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
       ) : null}
 
       {teams.length === 0 ? (
-        <p className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-10 text-center text-sm text-zinc-500">
+        <p className="mt-6 rounded-md border border-dashed border-rule-strong bg-surface px-4 py-10 text-center text-sm text-muted">
           No confirmed matches yet. Accept a request from{" "}
           <a className="font-bold text-brand hover:underline" href="/requests">
             Requests
@@ -59,20 +59,23 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
 
             return (
               <article
-                className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5"
+                className="flex flex-col gap-3 rounded-lg border border-rule bg-surface p-5"
                 key={team.teamId}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-zinc-950">
-                    {noun === "partner" ? "Your partner" : `Team of ${memberCount}`}
-                  </p>
-                  <span className={team.isComplete ? badge.gold : badge.warning}>
+                {/* The section label was a bordered box inside a bordered card. It is
+                    the card's subject, so it is now simply its heading. */}
+                <div className="flex items-baseline justify-between gap-3 border-b border-rule pb-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-bold text-ink">
+                      {formatSectionLabel(team.section)}
+                    </p>
+                    <p className="mt-0.5 text-[13px] text-muted">
+                      {noun === "partner" ? "Your partner" : `Team of ${memberCount}`}
+                    </p>
+                  </div>
+                  <span className={team.isComplete ? chip.team : chip.looking}>
                     {team.isComplete ? "Complete" : "Looking for more"}
                   </span>
-                </div>
-
-                <div className="rounded-lg border border-zinc-100 bg-stone-50 px-3 py-2 text-xs font-bold text-brand">
-                  {formatSectionLabel(team.section)}
                 </div>
 
                 {team.teammates.map((teammate) => {
@@ -87,8 +90,8 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
                           {getInitials(name)}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-bold text-zinc-950">{name}</p>
-                          <p className="truncate text-xs text-zinc-400">
+                          <p className="truncate text-[15px] font-bold text-ink">{name}</p>
+                          <p className="truncate text-xs text-muted">
                             {[teammate.year, teammate.program].filter(Boolean).join(" · ") ||
                               "No program set"}
                           </p>
@@ -99,7 +102,7 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
                   );
                 })}
 
-                <p className="text-xs text-zinc-400">Joined on {formatDate(team.joinedAt)}</p>
+                <p className="text-xs text-muted">Joined on {formatDate(team.joinedAt)}</p>
                 <TeamCompletionControls
                   isComplete={team.isComplete}
                   redirectTo="/matches"

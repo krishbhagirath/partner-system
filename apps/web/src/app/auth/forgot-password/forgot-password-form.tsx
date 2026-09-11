@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="email">
+      <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="email">
         McMaster email
         <input
           autoCapitalize="none"

@@ -4,20 +4,32 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import { SignOutButton } from "@/components/sign-out-button";
 import { BrandMark } from "@/components/site-header";
 import { TermSwitcher } from "@/components/term-switcher";
+import {
+  IconDashboard,
+  IconRequests,
+  IconSearch,
+  IconSettings,
+  IconTeam,
+} from "@/components/nav-icons";
 import { formatRelativeTime, formatUserDisplayName, getInitials } from "@/lib/format";
-import { button } from "@/lib/ui";
+import { avatarColorClass, button } from "@/lib/ui";
 import { countPendingIncomingRequests, getRecentNotificationsForUser } from "@/server/lab-partner";
 
 type AppView = "dashboard" | "discovery" | "requests" | "matches" | "profile" | "settings";
 
 const UNREAD_WINDOW_MS = 48 * 60 * 60 * 1000;
 
-const navItems: Array<{ href: string; icon: string; key: AppView; label: string }> = [
-  { href: "/dashboard", icon: "▦", key: "dashboard", label: "Dashboard" },
-  { href: "/sections", icon: "⌕", key: "discovery", label: "Find partners" },
-  { href: "/requests", icon: "✉", key: "requests", label: "Requests" },
-  { href: "/matches", icon: "◎", key: "matches", label: "Matches" },
-  { href: "/settings", icon: "⚙", key: "settings", label: "Settings" },
+const navItems: Array<{
+  Icon: (props: { className?: string }) => React.ReactElement;
+  href: string;
+  key: AppView;
+  label: string;
+}> = [
+  { Icon: IconDashboard, href: "/dashboard", key: "dashboard", label: "Dashboard" },
+  { Icon: IconSearch, href: "/sections", key: "discovery", label: "Find partners" },
+  { Icon: IconRequests, href: "/requests", key: "requests", label: "Requests" },
+  { Icon: IconTeam, href: "/matches", key: "matches", label: "Matches" },
+  { Icon: IconSettings, href: "/settings", key: "settings", label: "Settings" },
 ];
 
 type AppShellUser = {
@@ -62,23 +74,26 @@ export async function AppShell({
   const initials = getInitials(displayName);
 
   return (
-    <div className="flex min-h-screen bg-stone-50 text-zinc-950">
-      <aside className="hidden w-[250px] shrink-0 flex-col border-r border-zinc-200 bg-white px-3.5 py-5 lg:flex">
-        <div className="mb-6 px-1">
+    <div className="flex min-h-screen bg-paper text-ink">
+      <aside className="hidden w-[236px] shrink-0 flex-col border-r border-rule bg-surface px-3 py-5 lg:flex">
+        <div className="mb-6 px-2">
           <BrandMark />
         </div>
 
         <TermSwitcher activeTerm={activeTerm} terms={terms} />
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           {navItems.map((item) => (
-            <Link className={navLinkClass(item.key === active)} href={item.href} key={item.key}>
-              <span aria-hidden className="w-4 text-center">
-                {item.icon}
-              </span>
+            <Link
+              aria-current={item.key === active ? "page" : undefined}
+              className={navLinkClass(item.key === active)}
+              href={item.href}
+              key={item.key}
+            >
+              <item.Icon />
               {item.label}
               {item.key === "requests" && pendingCount > 0 ? (
-                <span className="ml-auto rounded-full bg-brand px-1.5 py-0.5 text-[11px] font-bold text-white">
+                <span className="tnum ml-auto rounded-full bg-brand px-1.5 py-0.5 text-[11px] font-bold text-white">
                   {pendingCount}
                 </span>
               ) : null}
@@ -86,26 +101,34 @@ export async function AppShell({
           ))}
         </nav>
 
-        <div className="mt-auto border-t border-zinc-100 pt-3">
+        <div className="mt-auto border-t border-rule pt-3">
           <Link
-            className="flex items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-stone-50"
+            aria-current={active === "profile" ? "page" : undefined}
+            className={`flex items-center gap-2.5 rounded-md p-2 transition-colors ${
+              active === "profile" ? "bg-brand-tint" : "hover:bg-paper"
+            }`}
             href="/profile"
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-white">
+            <span
+              className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white ${avatarColorClass(user.id)}`}
+            >
               {initials}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-bold">{displayName}</span>
-              <span className="block truncate text-xs text-zinc-400">{user.email}</span>
+              <span className="block truncate text-sm font-semibold text-ink">{displayName}</span>
+              <span className="block truncate text-xs text-muted">{user.email}</span>
             </span>
           </Link>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-stone-50 px-5">
-          <p className="font-display text-lg font-bold">{pageTitle}</p>
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-10 flex h-[60px] shrink-0 items-center justify-between gap-3 border-b border-rule bg-paper/95 px-5 backdrop-blur-sm">
+          <p className="font-display text-[15px] font-bold text-ink lg:hidden">{pageTitle}</p>
+          {/* On desktop the page title is the h1 in the content, so the bar stays
+              quiet rather than repeating it. */}
+          <span className="hidden lg:block" />
+          <div className="flex items-center gap-2">
             <NotificationsBell notifications={notificationViews} />
             {/*
               `max-sm:hidden`, not `hidden sm:inline-flex`: button.primary already
@@ -116,10 +139,7 @@ export async function AppShell({
               what pushed the notification panel off the left edge. A max-width
               variant is emitted after the base utilities, so it wins.
             */}
-            <Link className={`${button.primary} max-sm:hidden`} href="/sections">
-              Find partners
-            </Link>
-            <SignOutButton className="hidden text-sm font-semibold text-zinc-500 hover:text-brand lg:inline-flex" />
+            <SignOutButton className={`${button.ghost} max-lg:hidden`} />
           </div>
         </header>
 
@@ -129,7 +149,7 @@ export async function AppShell({
           rendered. It sits outside the scrolling nav so it stays pinned instead of
           scrolling out of reach with the links.
         */}
-        <div className="flex items-center gap-2 border-b border-zinc-200 bg-white px-3 py-2 lg:hidden">
+        <div className="flex items-center gap-2 border-b border-rule bg-surface px-3 py-2 lg:hidden">
           <nav aria-label="Sections" className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
             {navItems.map((item) => (
               <Link
@@ -147,20 +167,22 @@ export async function AppShell({
           <TermSwitcher activeTerm={activeTerm} terms={terms} variant="compact" />
         </div>
 
-        <main className="mx-auto w-full max-w-[1160px] flex-1 px-6 py-8 sm:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1120px] flex-1 px-5 py-8 sm:px-8 sm:py-10">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
 
 function navLinkClass(active: boolean) {
-  return `flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
-    active ? "bg-brand-tint text-brand" : "text-zinc-600 hover:bg-stone-50"
+  return `flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[14.5px] font-semibold transition-colors ${
+    active ? "bg-brand-tint text-brand" : "text-ink-soft hover:bg-paper hover:text-ink"
   }`;
 }
 
 function mobileNavLinkClass(active: boolean) {
-  return `shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
-    active ? "bg-brand-tint text-brand" : "text-zinc-600 hover:bg-stone-50"
+  return `shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition-colors ${
+    active ? "bg-brand-tint text-brand" : "text-muted hover:text-ink"
   }`;
 }

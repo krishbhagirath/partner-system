@@ -4,7 +4,13 @@ import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { PendingButton } from "@/components/pending-button";
 import { getInitials } from "@/lib/format";
-import { button, input as inputClass, textarea as textareaClass } from "@/lib/ui";
+import {
+  button,
+  input as inputClass,
+  pageLede,
+  pageTitle,
+  textarea as textareaClass,
+} from "@/lib/ui";
 import { requirePageUser } from "@/server/auth";
 import { getUserProfile } from "@/server/lab-partner";
 
@@ -29,23 +35,26 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
   return (
     <AppShell active="profile" pageTitle="Your profile" user={user}>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">Your profile</h1>
+      <h1 className={pageTitle}>Your profile</h1>
+      <p className={pageLede}>
+        This is what classmates see. Contact details stay hidden until you match.
+      </p>
 
       <NoticeBanner clearHref="/profile" notice={notice} />
 
-      <div className="mt-6 max-w-xl rounded-2xl border border-zinc-200 bg-white p-7">
+      <div className="mt-6 max-w-xl rounded-lg border border-rule bg-surface p-7">
         <div className="mb-6 flex items-center gap-4">
           <span className="grid size-16 shrink-0 place-items-center rounded-full bg-brand font-display text-xl font-bold text-white">
             {getInitials(displayName)}
           </span>
           <div>
-            <p className="text-lg font-bold text-zinc-950">{displayName}</p>
-            <p className="text-sm text-zinc-500">{user.email}</p>
+            <p className="text-lg font-bold text-ink">{displayName}</p>
+            <p className="text-sm text-muted">{user.email}</p>
           </div>
         </div>
 
         <form action={updateProfileDetails} className="grid gap-4">
-          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="displayName">
+          <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="displayName">
             Display name
             <input
               className={inputClass}
@@ -59,7 +68,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="program">
+          <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="program">
             Program
             <input
               className={inputClass}
@@ -72,7 +81,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="year">
+          <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="year">
             Year
             <input
               className={inputClass}
@@ -85,7 +94,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="bio">
+          <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="bio">
             About you
             <textarea
               className={`${textareaClass} min-h-24`}
@@ -98,18 +107,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           </label>
 
-          <div className="mt-2 border-t border-zinc-100 pt-4">
-            <p className="text-sm font-bold text-zinc-950">
+          <div className="mt-2 border-t border-rule pt-4">
+            <p className="text-sm font-bold text-ink">
               Contact info <span className="font-semibold text-brand">(at least one required)</span>
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-muted">
               So matched partners can reach you. Only shown to classmates you&apos;ve confirmed as a
               partner, never in Find partners or Requests.
             </p>
 
             <div className="mt-3 grid gap-4">
               <label
-                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                className="grid gap-2 text-sm font-semibold text-ink"
                 htmlFor="contactPhone"
               >
                 Phone number
@@ -125,7 +134,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </label>
 
               <label
-                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                className="grid gap-2 text-sm font-semibold text-ink"
                 htmlFor="contactInstagram"
               >
                 Instagram
@@ -141,7 +150,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               </label>
 
               <label
-                className="grid gap-2 text-sm font-semibold text-zinc-800"
+                className="grid gap-2 text-sm font-semibold text-ink"
                 htmlFor="contactOther"
               >
                 Other (Discord, Snapchat, etc.)

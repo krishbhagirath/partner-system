@@ -338,11 +338,11 @@ export function ImportFromMosaic({ existingSectionsCount }: { existingSectionsCo
   ).length;
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
+    <main className="min-h-screen bg-paper text-ink">
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-6 py-8">
         <div className="mb-2 flex items-center justify-between">
           <BrandMark />
-          <SignOutButton className="text-sm font-semibold text-zinc-400 hover:text-brand" />
+          <SignOutButton className="text-sm font-semibold text-muted hover:text-brand" />
         </div>
 
         <div className="mt-8 mb-10 flex items-center justify-center gap-2">
@@ -350,7 +350,7 @@ export function ImportFromMosaic({ existingSectionsCount }: { existingSectionsCo
             <span
               aria-label={label}
               className={`h-2 rounded-full transition-all ${
-                index === step ? "w-6 bg-brand" : index < step ? "w-2 bg-brand" : "w-2 bg-zinc-200"
+                index === step ? "w-6 bg-brand" : index < step ? "w-2 bg-brand" : "w-2 bg-rule"
               }`}
               key={label}
             />
@@ -437,10 +437,10 @@ function ConnectStep({
       <p className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-brand">
         Step 1 of 5
       </p>
-      <h1 className="font-display text-3xl font-bold text-zinc-950">
+      <h1 className="font-display text-3xl font-bold text-ink">
         Connect your Mosaic account
       </h1>
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-zinc-600">
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-ink-soft">
         Log in with your MacID and we&apos;ll pull your labs and tutorials directly from Mosaic.
         Lecture times and personal info are never stored.
       </p>
@@ -455,17 +455,17 @@ function ConnectStep({
 
       <form
         autoComplete="off"
-        className="mt-6 rounded-2xl border border-zinc-200 bg-white p-7 text-left shadow-sm"
+        className="mt-6 rounded-2xl border border-rule bg-surface p-7 text-left shadow-sm"
         onSubmit={onSubmit}
       >
-        <div className="mb-5 flex items-center gap-2.5 border-b border-zinc-100 pb-4">
+        <div className="mb-5 flex items-center gap-2.5 border-b border-rule pb-4">
           <span className="grid size-8 place-items-center rounded-lg bg-brand font-display text-sm font-bold text-white">
             M
           </span>
-          <span className="text-sm font-bold text-zinc-950">Mosaic Student Center</span>
+          <span className="text-sm font-bold text-ink">Mosaic Student Center</span>
         </div>
 
-        <label className="grid gap-2 text-sm font-semibold text-zinc-800" htmlFor="mac-id">
+        <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="mac-id">
           MacID
           <input
             autoCapitalize="none"
@@ -482,7 +482,7 @@ function ConnectStep({
         </label>
 
         <label
-          className="mt-4 grid gap-2 text-sm font-semibold text-zinc-800"
+          className="mt-4 grid gap-2 text-sm font-semibold text-ink"
           htmlFor="mosaic-password"
         >
           Password
@@ -512,7 +512,7 @@ function ConnectStep({
           {isSubmitting ? "Logging in..." : "Log in to Mosaic"}
         </button>
 
-        <p className="mt-3.5 text-center text-xs text-zinc-400">
+        <p className="mt-3.5 text-center text-xs text-muted">
           Encrypted connection — your credentials are never stored.
         </p>
       </form>
@@ -537,10 +537,10 @@ function SyncingStep({
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-red-50 text-2xl text-red-600">
           !
         </div>
-        <h1 className="mt-5 font-display text-xl font-bold text-zinc-950">
+        <h1 className="mt-5 font-display text-xl font-bold text-ink">
           Couldn&apos;t connect to Mosaic
         </h1>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-600">
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-soft">
           {job.errorMessage ??
             "Mosaic didn't respond in time. This is usually temporary — check your connection and try again."}
         </p>
@@ -562,17 +562,17 @@ function SyncingStep({
     <div className="pt-12 text-center">
       <div
         aria-hidden
-        className="mx-auto size-[52px] animate-spin rounded-full border-4 border-zinc-200 border-t-brand"
+        className="mx-auto size-[52px] animate-spin rounded-full border-4 border-rule border-t-brand"
       />
-      <h1 className="mt-6 font-display text-xl font-bold text-zinc-950">Syncing with Mosaic...</h1>
-      <p className="mt-2 text-sm text-zinc-500">{progress.label}</p>
+      <h1 className="mt-6 font-display text-xl font-bold text-ink">Syncing with Mosaic...</h1>
+      <p className="mt-2 text-sm text-muted">{progress.label}</p>
 
       <div className="mx-auto mt-7 max-w-xs" aria-live="polite">
         <div
           aria-valuemax={100}
           aria-valuemin={0}
           aria-valuenow={progress.percent}
-          className="h-2 w-full overflow-hidden rounded-full bg-zinc-200"
+          className="h-2 w-full overflow-hidden rounded-full bg-rule"
           role="progressbar"
         >
           <div
@@ -580,7 +580,7 @@ function SyncingStep({
             style={{ width: `${progress.percent}%` }}
           />
         </div>
-        <p className="mt-2.5 text-xs font-bold text-zinc-400">{progress.percent}%</p>
+        <p className="mt-2.5 text-xs font-bold text-muted">{progress.percent}%</p>
       </div>
 
       {statusError ? (
@@ -614,10 +614,10 @@ function ReviewStep({
       <p className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-brand">
         Step 3 of 5
       </p>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">
+      <h1 className="font-display text-2xl font-bold text-ink">
         We found {sections.length} {sections.length === 1 ? "section" : "sections"}
       </h1>
-      <p className="mt-2 text-[15px] text-zinc-600">
+      <p className="mt-2 text-[15px] text-ink-soft">
         Here&apos;s everything tagged as a lab or tutorial. Uncheck anything that shouldn&apos;t be
         here.
       </p>
@@ -635,7 +635,7 @@ function ReviewStep({
 
       <div className="mt-5 flex flex-col gap-2.5">
         {isLoadingSections ? (
-          <p className="rounded border border-zinc-200 bg-white px-4 py-5 text-sm text-zinc-500">
+          <p className="rounded border border-rule bg-surface px-4 py-5 text-sm text-muted">
             Loading your imported sections...
           </p>
         ) : (
@@ -644,7 +644,7 @@ function ReviewStep({
 
             return (
               <div
-                className="flex items-center gap-3.5 rounded-xl border border-zinc-200 bg-white px-4 py-3.5"
+                className="flex items-center gap-3.5 rounded-xl border border-rule bg-surface px-4 py-3.5"
                 key={section.id}
               >
                 <input
@@ -660,13 +660,13 @@ function ReviewStep({
                   type="checkbox"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-zinc-950">{formatSectionLabel(section)}</p>
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="text-sm font-bold text-ink">{formatSectionLabel(section)}</p>
+                  <p className="mt-0.5 text-xs text-muted">
                     {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime}
                     {section.location ? ` · ${section.location}` : ""}
                   </p>
                 </div>
-                <span className="shrink-0 rounded bg-zinc-100 px-2 py-1 text-[11px] font-bold text-zinc-600">
+                <span className="shrink-0 rounded bg-paper px-2 py-1 text-[11px] font-bold text-ink-soft">
                   {formatComponentType(section.componentType)}
                 </span>
               </div>
@@ -715,10 +715,10 @@ function ChoosePartnersStep({
       <p className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-brand">
         Step 4 of 5
       </p>
-      <h1 className="font-display text-2xl font-bold text-zinc-950">
+      <h1 className="font-display text-2xl font-bold text-ink">
         Does this section need a partner?
       </h1>
-      <p className="mt-2 text-[15px] text-zinc-600">
+      <p className="mt-2 text-[15px] text-ink-soft">
         Answer for each lab or tutorial. A &quot;yes&quot; also marks you as looking for a
         partner there — you can change this anytime in Settings.
       </p>
@@ -740,15 +740,15 @@ function ChoosePartnersStep({
 
           return (
             <div
-              className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5"
+              className="rounded-xl border border-rule bg-surface px-4 py-3.5"
               key={section.id}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-zinc-950">
+                  <p className="text-sm font-bold text-ink">
                     {formatSectionLabel(section)}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="mt-0.5 text-xs text-muted">
                     {formatDay(section.dayOfWeek)} {section.startTime}–{section.endTime}
                     {section.location ? ` · ${section.location}` : ""}
                   </p>
@@ -794,7 +794,7 @@ function partnerNeedPillClass(active: boolean) {
   return `rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors ${
     active
       ? "border-brand bg-brand text-white"
-      : "border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand"
+      : "border-rule bg-surface text-ink-soft hover:border-brand hover:text-brand"
   }`;
 }
 
@@ -804,8 +804,8 @@ function DoneStep({ lookingForCount }: { lookingForCount: number }) {
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-gold-tint text-3xl text-gold-tint-text">
         ✓
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">You&apos;re all set</h1>
-      <p className="mx-auto mt-3 max-w-sm text-[15px] leading-6 text-zinc-600">
+      <h1 className="mt-6 font-display text-2xl font-bold text-ink">You&apos;re all set</h1>
+      <p className="mx-auto mt-3 max-w-sm text-[15px] leading-6 text-ink-soft">
         {lookingForCount} {lookingForCount === 1 ? "section is" : "sections are"} open for a
         partner. Head to your dashboard to see who else is looking.
       </p>

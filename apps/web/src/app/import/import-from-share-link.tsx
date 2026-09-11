@@ -74,11 +74,11 @@ export function ImportFromShareLink({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
+    <main className="min-h-screen bg-paper text-ink">
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-6 py-8">
         <div className="mb-8 flex items-center justify-between">
           <BrandMark />
-          <SignOutButton className="text-sm font-semibold text-zinc-400 hover:text-brand" />
+          <SignOutButton className="text-sm font-semibold text-muted hover:text-brand" />
         </div>
 
         <div className="flex-1">
@@ -86,15 +86,15 @@ export function ImportFromShareLink({
             <DoneView imported={state.imported} onImportAnother={importAnother} term={state.term} />
           ) : (
             <>
-              <h1 className="font-display text-3xl font-bold text-zinc-950">Import your schedule</h1>
-              <p className="mt-3 text-[15px] leading-7 text-zinc-600">
+              <h1 className="font-display text-3xl font-bold text-ink">Import your schedule</h1>
+              <p className="mt-3 text-[15px] leading-7 text-ink-soft">
                 Paste your McMaster MyTimetable share link and we&apos;ll pull in your lab and
                 tutorial sections. We detect which semester it&apos;s for automatically. No MacID
                 password needed. Import Fall and Winter separately (one link each).
               </p>
 
               {importedTerms.length > 0 ? (
-                <p className="mt-4 text-sm text-zinc-600">
+                <p className="mt-4 text-sm text-ink-soft">
                   Imported so far:{" "}
                   {importedTerms.map((term) => (
                     <span
@@ -104,13 +104,13 @@ export function ImportFromShareLink({
                       {formatTerm(term)}
                     </span>
                   ))}
-                  <span className="mt-1 block text-zinc-500">
+                  <span className="mt-1 block text-muted">
                     Paste another link to add or re-import a semester.
                   </span>
                 </p>
               ) : null}
 
-              <ol className="mt-6 grid gap-3 text-[15px] leading-6 text-zinc-700">
+              <ol className="mt-6 grid gap-3 text-[15px] leading-6 text-ink-soft">
                 <Step n={1}>
                   Go to{" "}
                   <a
@@ -161,7 +161,7 @@ export function ImportFromShareLink({
 
               {onUseMacId ? (
                 <button
-                  className="mt-6 text-sm font-semibold text-zinc-400 hover:text-brand"
+                  className="mt-6 text-sm font-semibold text-muted hover:text-brand"
                   onClick={onUseMacId}
                   type="button"
                 >
@@ -186,13 +186,13 @@ function LoadingBar() {
 
   return (
     <div className="mt-1" aria-live="polite">
-      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200" role="progressbar">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-rule" role="progressbar">
         <div
           className="h-full rounded-full bg-brand transition-all duration-[2200ms] ease-out"
           style={{ width: `${width}%` }}
         />
       </div>
-      <p className="mt-2.5 text-xs font-semibold text-zinc-400">
+      <p className="mt-2.5 text-xs font-semibold text-muted">
         Reading your MyTimetable schedule...
       </p>
     </div>
@@ -213,10 +213,10 @@ function DoneView({
       <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand/10 text-2xl">
         ✅
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-zinc-950">
+      <h1 className="mt-6 font-display text-2xl font-bold text-ink">
         {term ? `${formatTerm(term)} imported` : "Schedule imported"}
       </h1>
-      <p className="mt-2 text-[15px] leading-7 text-zinc-600">
+      <p className="mt-2 text-[15px] leading-7 text-ink-soft">
         Imported {imported} lab/tutorial {imported === 1 ? "section" : "sections"}
         {term ? ` for ${formatTerm(term)}` : ""}. Re-importing this semester keeps the
         courses you already had — it only adds new ones and drops any you are no longer
@@ -230,7 +230,7 @@ function DoneView({
         <button className={`${button.secondary} h-12 w-full`} onClick={onImportAnother} type="button">
           Import another semester
         </button>
-        <Link className="text-sm font-semibold text-zinc-500 hover:text-brand" href="/sections">
+        <Link className="text-sm font-semibold text-muted hover:text-brand" href="/sections">
           Review my sections
         </Link>
       </div>
