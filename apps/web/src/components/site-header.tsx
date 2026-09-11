@@ -7,15 +7,21 @@ export function BrandMark({ withTagline = false }: { withTagline?: boolean }) {
   return (
     <Link className="flex items-center gap-3" href="/">
       {/*
-        The gold notch is the one deliberate exception to "gold means a confirmed
-        team" — this is brand identity, not a status signal, so it never appears
-        beside team state and cannot be misread as one.
+        Two equal marks sharing one slot — two people in the same lab, which is the
+        whole product. It replaces the "P" tile with an arrow badge: a letter in a
+        rounded square is the most generic app mark there is, the arrow meant
+        nothing here, and the pair of them turned to mush at favicon size.
+
+        Equal weight is the point: neither mark is the "main" one. The gold is the
+        single deliberate exception to "gold means a confirmed team" — this is brand
+        identity, never rendered beside team state, so it cannot be misread as one.
       */}
-      <span className="relative grid size-10 shrink-0 place-items-center rounded-md bg-brand font-display text-lg font-bold text-white">
-        P
-        <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-gold text-[9px] font-black leading-none text-brand ring-2 ring-surface">
-          ↑
-        </span>
+      <span aria-hidden className="shrink-0">
+        <svg className="size-10" viewBox="0 0 64 64">
+          <rect fill="#7A003C" height="64" rx="14" width="64" />
+          <rect fill="#FFFFFF" height="18" rx="5" width="18" x="11" y="23" />
+          <rect fill="#C9A227" height="18" rx="5" width="18" x="35" y="23" />
+        </svg>
       </span>
       <span>
         <span className="block font-display text-lg font-bold leading-none tracking-[-0.01em] text-ink">
