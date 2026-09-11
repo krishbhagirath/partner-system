@@ -10,8 +10,23 @@ export function formatDate(date: Date) {
   }).format(date);
 }
 
+/**
+ * 12-hour, because that is how Canadian undergrads read a timetable and how
+ * MyTimetable presents one. Times are stored in `@db.Time(0)` columns and read back
+ * as UTC instants, so the clock parts must come off the ISO string rather than from
+ * a locale formatter, which would shift them by the server's offset.
+ *
+ * The minutes are always shown ("2:30pm", "11:00am") so a column of times stays the
+ * same width — see the `.tnum` class, which pairs with this.
+ */
 export function toClockTime(date: Date) {
-  return date.toISOString().slice(11, 16);
+  const iso = date.toISOString();
+  const hours = Number(iso.slice(11, 13));
+  const minutes = iso.slice(14, 16);
+  const suffix = hours < 12 ? "am" : "pm";
+  const display = hours % 12 === 0 ? 12 : hours % 12;
+
+  return `${display}:${minutes}${suffix}`;
 }
 
 export function formatComponentType(componentType: string) {
