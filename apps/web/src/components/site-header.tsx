@@ -5,25 +5,25 @@ import { button } from "@/lib/ui";
 
 export function BrandMark({ withTagline = false }: { withTagline?: boolean }) {
   return (
-    <Link className="flex items-center gap-2.5" href="/">
+    <Link className="flex items-center gap-3" href="/">
       {/*
-        The mark is a timetable cell with one slot filled — the same idea the whole
-        product runs on. It replaces the generic rounded-square initial.
+        The gold notch is the one deliberate exception to "gold means a confirmed
+        team" — this is brand identity, not a status signal, so it never appears
+        beside team state and cannot be misread as one.
       */}
-      <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded bg-brand">
-        <svg className="size-[18px]" fill="none" viewBox="0 0 18 18">
-          <rect height="13" rx="1.5" stroke="white" strokeWidth="1.4" width="13" x="2.5" y="2.5" />
-          <path d="M2.5 7h13" stroke="white" strokeWidth="1.4" />
-          <rect fill="white" height="4" rx="0.5" width="4.5" x="9" y="9" />
-        </svg>
+      <span className="relative grid size-10 shrink-0 place-items-center rounded-md bg-brand font-display text-lg font-bold text-white">
+        P
+        <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-gold text-[9px] font-black leading-none text-brand ring-2 ring-surface">
+          ↑
+        </span>
       </span>
       <span>
-        <span className="block font-display text-[17px] font-bold leading-none tracking-[-0.01em] text-ink">
+        <span className="block font-display text-lg font-bold leading-none tracking-[-0.01em] text-ink">
           PartnerUp
         </span>
         {withTagline ? (
-          <span className="mt-1 block text-[12.5px] leading-none text-muted">
-            For McMaster students
+          <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+            For McMaster Students
           </span>
         ) : null}
       </span>
