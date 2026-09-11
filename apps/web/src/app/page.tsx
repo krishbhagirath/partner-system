@@ -1,49 +1,50 @@
 import Link from "next/link";
 
 import { auth } from "@/auth";
+import { LandingTimetable } from "@/components/landing-timetable";
 import { NoticeBanner } from "@/components/notice-banner";
 import { SiteHeader } from "@/components/site-header";
 import { button } from "@/lib/ui";
 import { countSectionsForUser } from "@/server/lab-partner";
 
-const previewSections = [
-  { candidates: "3 candidates", course: "COMPSCI 2C03 Lab 03", time: "Tue 2:30–4:20 PM · ITB 137" },
-  { candidates: "1 match", course: "CHEM 2OA3 Lab 02", time: "Wed 9:30 AM–12:20 PM · ABB 165" },
-] as const;
-
-const previewPartners = [
-  {
-    colorClass: "bg-brand",
-    initials: "JD",
-    name: "John Doe",
-    program: "Level II · Computer Science",
-  },
-  {
-    colorClass: "bg-gold",
-    initials: "JL",
-    name: "Jordan Lee",
-    program: "Level II · Software Eng.",
-  },
-] as const;
-
+/**
+ * The flow is genuinely sequential, so it is numbered — but as a ruled three-column
+ * band rather than three cards, which is the templated default.
+ */
 const steps = [
   {
+    body: "Open MyTimetable, copy the share link, paste it here. Only your labs and tutorials are saved.",
+    heading: "Paste your timetable link",
     number: "1",
-    title: "Import your schedule",
-    description:
-      "Paste your McMaster MyTimetable share link. We pull in your labs and tutorials, nothing else.",
   },
   {
+    body: "For each lab or tutorial, say whether you are looking. You control which ones classmates can see.",
+    heading: "Mark what you need",
     number: "2",
-    title: "Get matched",
-    description:
-      "Browse classmates in your exact sections who are also looking for a partner, with an optional note from each.",
   },
   {
+    body: "See classmates in that exact section who are also looking. Send a request; when they accept you swap contact details.",
+    heading: "Ask someone",
     number: "3",
-    title: "Confirm your partner",
-    description:
-      "Send a request, they accept, and you're matched. That section disappears from discovery for both of you.",
+  },
+] as const;
+
+/**
+ * Handing a website your class schedule is the real hesitation, so it gets a
+ * section rather than a footnote. Every line here is true of the current build.
+ */
+const assurances = [
+  {
+    body: "There is no password to give us. MyTimetable share links are read-only, and that is the only way in.",
+    heading: "We never ask for your MacID",
+  },
+  {
+    body: "Lectures, grades and everything else are discarded. We keep the labs and tutorials, nothing more.",
+    heading: "Only labs and tutorials are stored",
+  },
+  {
+    body: "Your phone number and socials stay hidden until you and a classmate have both confirmed.",
+    heading: "Contact details come last",
   },
 ] as const;
 
@@ -60,156 +61,139 @@ export default async function Home({ searchParams }: HomeProps) {
   const notice = (await searchParams)?.notice;
 
   return (
-    <main className="min-h-screen bg-stone-50 text-zinc-950">
-      <div className="mx-auto w-full max-w-7xl px-6 py-6 sm:px-8 lg:px-10">
-        <SiteHeader authenticated={isSignedIn} />
-        <NoticeBanner clearHref="/" notice={notice} />
+    <div className="min-h-screen bg-paper text-ink">
+      {/* The ruled ground runs behind the header and hero, then fades. */}
+      <div className="ruled">
+        <div className="mx-auto w-full max-w-[1120px] px-5 sm:px-8">
+          <SiteHeader authenticated={isSignedIn} />
+          <NoticeBanner clearHref="/" notice={notice} />
 
-        <section className="relative overflow-hidden py-20 lg:py-28">
-          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute left-1/2 top-0 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl" />
-            <div className="absolute right-0 top-32 h-72 w-72 rounded-full bg-gold/20 blur-3xl" />
-          </div>
-
-          <div className="relative mx-auto max-w-3xl text-center">
-            <p className="mx-auto inline-flex items-center gap-2 rounded-full bg-brand-tint px-4 py-1.5 text-sm font-bold text-brand">
-              <span aria-hidden className="size-1.5 rounded-full bg-gold" />
-              Built for McMaster students
-            </p>
-            <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-zinc-950 sm:text-5xl lg:text-[56px]">
-              Find your next lab partner, <span className="text-brand">without the guesswork.</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-zinc-700">
-              Import your Mosaic timetable, see who else is in your labs and tutorials, and send
-              partner requests in a couple of clicks.
-            </p>
-
-            <HeroCta hasSections={hasSections} isSignedIn={isSignedIn} />
-          </div>
-        </section>
-
-        <section className="pb-16">
-          <div className="mx-auto max-w-[1000px] rounded-[20px] border border-zinc-200 bg-white p-2 shadow-lg shadow-zinc-950/5">
-            <div className="flex items-center gap-2 rounded-2xl bg-zinc-900 px-5 py-3.5">
-              <span className="size-2.5 rounded-full bg-zinc-600" />
-              <span className="size-2.5 rounded-full bg-zinc-600" />
-              <span className="size-2.5 rounded-full bg-zinc-600" />
-              <span className="ml-2 text-xs text-zinc-400">app.partnerup.mcmaster.ca/dashboard</span>
-            </div>
-            <div className="grid gap-7 p-6 sm:p-9 lg:grid-cols-[1.1fr_1fr]">
+          <section className="pb-16 pt-16 sm:pt-24">
+            <div className="grid gap-12 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center lg:gap-16">
               <div>
-                <p className="mb-3.5 font-display text-sm font-bold text-zinc-950">
-                  Sections looking for a partner
+                <h1 className="max-w-[14ch] font-display text-[42px] font-extrabold leading-[0.98] tracking-[-0.032em] text-ink sm:text-[56px]">
+                  See who else is in your lab.
+                </h1>
+                <p className="mt-6 max-w-[44ch] text-[17.5px] leading-[1.65] text-ink-soft">
+                  PartnerUp reads your McMaster timetable and shows you the classmates in your
+                  exact lab and tutorial sections who still need a partner.
                 </p>
-                <div className="grid gap-2.5">
-                  {previewSections.map((preview) => (
-                    <div
-                      className="flex items-center justify-between rounded-xl border border-zinc-100 bg-stone-50 px-4 py-3.5"
-                      key={preview.course}
-                    >
-                      <div>
-                        <p className="text-sm font-bold text-zinc-950">{preview.course}</p>
-                        <p className="text-xs text-zinc-400">{preview.time}</p>
-                      </div>
-                      <span className="rounded-full bg-brand-tint px-2.5 py-1 text-xs font-bold text-brand">
-                        {preview.candidates}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-3.5 font-display text-sm font-bold text-zinc-950">
-                  Suggested partners
+
+                <HeroCta hasSections={hasSections} isSignedIn={isSignedIn} />
+
+                <p className="mt-7 border-t border-rule pt-4 text-[13px] leading-5 text-muted">
+                  For students with an @mcmaster.ca address. Free, and always will be.
                 </p>
-                <div className="grid gap-2.5">
-                  {previewPartners.map((preview) => (
-                    <div
-                      className="flex items-center gap-3 rounded-xl border border-zinc-100 px-3.5 py-3"
-                      key={preview.name}
-                    >
-                      <span
-                        className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold text-white ${preview.colorClass}`}
-                      >
-                        {preview.initials}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-zinc-950">{preview.name}</p>
-                        <p className="truncate text-xs text-zinc-400">{preview.program}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="pb-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-zinc-950">
-              Three steps, that&apos;s it.
-            </h2>
-          </div>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {steps.map((step) => (
-              <div
-                className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
-                key={step.number}
-              >
-                <span className="grid size-11 place-items-center rounded-xl bg-brand-tint font-display text-lg font-bold text-brand">
-                  {step.number}
-                </span>
-                <h3 className="mt-4 text-lg font-bold text-zinc-950">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {!isSignedIn ? (
-          <section className="pb-20">
-            <div className="rounded-xl bg-brand px-8 py-14 text-center text-white sm:px-16">
-              <h2 className="font-display text-3xl font-bold sm:text-4xl">
-                Ready to find your lab partner?
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-white/80">
-                Create your account with your @mcmaster.ca email and import your schedule in
-                minutes.
-              </p>
-              <Link
-                className="mt-8 inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-bold text-brand transition-colors hover:bg-zinc-100"
-                href="/auth/signup"
-              >
-                Get Started for Free
-              </Link>
+              <LandingTimetable />
             </div>
           </section>
-        ) : null}
+        </div>
       </div>
 
-      <footer className="border-t border-zinc-200 py-8">
-        <p className="mx-auto max-w-7xl px-6 text-center text-sm text-zinc-400 sm:px-8 lg:px-10">
-          Not affiliated with McMaster University.
-        </p>
+      <div className="mx-auto w-full max-w-[1120px] px-5 sm:px-8">
+        <main>
+
+          <section className="border-t border-rule py-16">
+            <h2 className="font-display text-[24px] font-bold tracking-[-0.015em] text-ink">
+              How it works
+            </h2>
+            <ol className="mt-9 grid gap-9 sm:grid-cols-3 sm:gap-0">
+              {steps.map((step, index) => (
+                <li
+                  className={`sm:px-8 sm:first:pl-0 sm:last:pr-0 ${
+                    index > 0 ? "sm:border-l sm:border-rule" : ""
+                  }`}
+                  key={step.number}
+                >
+                  {/* The numeral carries the sequence, so it gets real size rather
+                      than being a small label above a card. */}
+                  <p className="tnum font-display text-[32px] font-extrabold leading-none text-brand/25">
+                    {step.number}
+                  </p>
+                  <h3 className="mt-3 text-[16.5px] font-bold text-ink">{step.heading}</h3>
+                  <p className="mt-2 max-w-[38ch] text-[14.5px] leading-[1.6] text-muted">
+                    {step.body}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </main>
+      </div>
+
+      {/* Deliberately shaped unlike the section above it — heading held left against a
+          tinted ground — so the page has rhythm instead of three identical bands. */}
+      <section className="border-y border-rule bg-brand-tint/45">
+        <div className="mx-auto grid max-w-[1120px] gap-8 px-5 py-16 sm:px-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+          <div>
+            <h2 className="max-w-[16ch] font-display text-[24px] font-bold leading-tight tracking-[-0.015em] text-ink">
+              What happens to your schedule
+            </h2>
+            <p className="mt-3 max-w-[34ch] text-[14.5px] leading-6 text-ink-soft">
+              Handing a website your timetable is a fair thing to hesitate over. Here is
+              exactly what we do and do not keep.
+            </p>
+          </div>
+          <dl className="grid gap-px overflow-hidden rounded-lg border border-brand/15 bg-brand/15">
+            {assurances.map((item) => (
+              <div className="bg-paper px-5 py-4" key={item.heading}>
+                <dt className="text-[15px] font-bold text-ink">{item.heading}</dt>
+                <dd className="mt-1 max-w-[52ch] text-[14.5px] leading-[1.6] text-muted">
+                  {item.body}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      <div className="mx-auto w-full max-w-[1120px] px-5 sm:px-8">
+        <main>
+          {!isSignedIn ? (
+            <section className="flex flex-wrap items-center justify-between gap-6 py-16">
+              <div>
+                <p className="max-w-[20ch] font-display text-[28px] font-bold leading-[1.1] tracking-[-0.02em] text-ink">
+                  Ready to see who is in your sections?
+                </p>
+                <p className="mt-2 text-[14.5px] text-muted">
+                  Takes about a minute, and you can change what is visible at any time.
+                </p>
+              </div>
+              <Link className={`${button.primary} px-5 py-3 text-[15px]`} href="/auth/signup">
+                Create your account
+              </Link>
+            </section>
+          ) : null}
+        </main>
+      </div>
+
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-3 px-5 py-7 text-[13px] text-muted sm:px-8">
+          <p>PartnerUp is a student project. Not affiliated with McMaster University.</p>
+          <Link className="font-semibold hover:text-brand" href="/auth/signin">
+            Sign in
+          </Link>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }
 
+/**
+ * The label names what the click actually does, so it changes with the viewer's
+ * state rather than staying a generic "Get started".
+ */
 function HeroCta({ hasSections, isSignedIn }: { hasSections: boolean; isSignedIn: boolean }) {
   if (!isSignedIn) {
     return (
-      <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Link className={`${button.primary} px-6 py-3 text-base`} href="/auth/signup">
-          Get Started for Free
+      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Link className={`${button.primary} px-5 py-3 text-[15px]`} href="/auth/signup">
+          Create your account
         </Link>
-        <Link
-          className="text-sm font-semibold text-zinc-600 transition-colors hover:text-[#7A003C]"
-          href="/auth/signin"
-        >
-          Already have an account? <span className="font-bold underline">Sign in</span>
+        <Link className="text-sm font-semibold text-ink-soft hover:text-brand" href="/auth/signin">
+          I already have one
         </Link>
       </div>
     );
@@ -217,24 +201,21 @@ function HeroCta({ hasSections, isSignedIn }: { hasSections: boolean; isSignedIn
 
   if (hasSections) {
     return (
-      <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Link className={`${button.primary} px-6 py-3 text-base`} href="/dashboard">
-          Go to your dashboard
-        </Link>
-        <Link
-          className="text-sm font-semibold text-zinc-600 transition-colors hover:text-brand"
-          href="/sections"
-        >
+      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Link className={`${button.primary} px-5 py-3 text-[15px]`} href="/sections">
           Find partners
+        </Link>
+        <Link className="text-sm font-semibold text-ink-soft hover:text-brand" href="/dashboard">
+          Go to dashboard
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="mt-9 flex justify-center">
-      <Link className={`${button.primary} px-6 py-3 text-base`} href="/import">
-        Import your schedule
+    <div className="mt-8">
+      <Link className={`${button.primary} px-5 py-3 text-[15px]`} href="/import">
+        Import your timetable
       </Link>
     </div>
   );

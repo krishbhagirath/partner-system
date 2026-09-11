@@ -3,25 +3,27 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/sign-out-button";
 import { button } from "@/lib/ui";
 
-const navLinkBase = "rounded-md border px-4 py-2 transition-colors";
-const navLinkIdle = "border-zinc-300 bg-white text-zinc-800 hover:border-brand hover:text-brand";
-
 export function BrandMark({ withTagline = false }: { withTagline?: boolean }) {
   return (
-    <Link className="flex items-center gap-3" href="/">
-      <span className="relative grid size-10 shrink-0 place-items-center rounded-md bg-brand font-display text-lg font-bold text-white">
-        P
-        <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-gold text-[9px] font-black leading-none text-brand ring-2 ring-white">
-          ↑
-        </span>
+    <Link className="flex items-center gap-2.5" href="/">
+      {/*
+        The mark is a timetable cell with one slot filled — the same idea the whole
+        product runs on. It replaces the generic rounded-square initial.
+      */}
+      <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded bg-brand">
+        <svg className="size-[18px]" fill="none" viewBox="0 0 18 18">
+          <rect height="13" rx="1.5" stroke="white" strokeWidth="1.4" width="13" x="2.5" y="2.5" />
+          <path d="M2.5 7h13" stroke="white" strokeWidth="1.4" />
+          <rect fill="white" height="4" rx="0.5" width="4.5" x="9" y="9" />
+        </svg>
       </span>
       <span>
-        <span className="block font-display text-lg font-bold leading-none text-zinc-950">
+        <span className="block font-display text-[17px] font-bold leading-none tracking-[-0.01em] text-ink">
           PartnerUp
         </span>
         {withTagline ? (
-          <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            For McMaster Students
+          <span className="mt-1 block text-[12.5px] leading-none text-muted">
+            For McMaster students
           </span>
         ) : null}
       </span>
@@ -33,22 +35,22 @@ export function BrandMark({ withTagline = false }: { withTagline?: boolean }) {
 // in-app page uses AppShell's sidebar nav instead.
 export function SiteHeader({ authenticated }: { authenticated: boolean }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+    <header className="flex items-center justify-between gap-4 border-b border-rule py-4">
       <BrandMark />
-      <nav aria-label="Main" className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+      <nav aria-label="Main" className="flex items-center gap-1.5 sm:gap-3">
         {authenticated ? (
           <>
-            <Link className={`${navLinkBase} ${navLinkIdle}`} href="/dashboard">
+            <Link className={button.ghost} href="/dashboard">
               Dashboard
             </Link>
-            <SignOutButton className={`${navLinkBase} ${navLinkIdle}`} />
+            <SignOutButton className={button.ghost} />
           </>
         ) : (
           <>
-            <Link className={button.primary} href="/auth/signin">
+            <Link className={button.ghost} href="/auth/signin">
               Sign in
             </Link>
-            <Link className={button.secondary} href="/auth/signup">
+            <Link className={button.primary} href="/auth/signup">
               Create account
             </Link>
           </>
